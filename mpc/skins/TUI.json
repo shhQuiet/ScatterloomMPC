@@ -71170,7 +71170,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1065 50 180 56"
+                "bounds": "1065 15 180 56"
               }
             },
             {
@@ -71204,7 +71204,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1065 175 180 56"
+                "bounds": "1065 125 180 56"
               }
             },
             {
@@ -71238,7 +71238,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1065 300 180 56"
+                "bounds": "1065 235 180 56"
               }
             },
             {
@@ -71272,7 +71272,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1065 425 180 56"
+                "bounds": "1065 345 180 56"
               }
             },
             {
@@ -71301,7 +71301,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "980 500 278 107"
+                "bounds": "1040 430 230 107"
               }
             }
           ]
