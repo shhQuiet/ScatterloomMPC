@@ -566,6 +566,7 @@ if (sharedStructureChanged) {
 // The engine reports rotated step numbers. Convert them to ring positions.
 const int currentStep = scatterloomPlaying ? poolStatus.playingStep.load(std::memory_order_relaxed) : -1;
 const int visibleStep = currentStep >= 0 ? (currentStep - ringRotation + ringSteps) % ringSteps : -1;
+const int previousVisibleStep = lastVisibleStep;
 const bool sharedPlayheadChanged = displayDirty || visibleStep != lastVisibleStep;
 if (displayDirty || visibleStep != lastVisibleStep) {
  for (int i=0; i<32; ++i) {
@@ -574,7 +575,7 @@ if (displayDirty || visibleStep != lastVisibleStep) {
  }
  lastVisibleStep = visibleStep;
 }
-if (sharedStructureChanged || sharedPlayheadChanged) {
+if (sharedStructureChanged) {
  std::array<int,kRhythmPositionCount> state {};
  for(int i=0;i<ringSteps;++i) {
   const int active=(((i+ringRotation)%ringSteps)*ringPulses)%ringSteps < ringPulses;
@@ -582,6 +583,16 @@ if (sharedStructureChanged || sharedPlayheadChanged) {
  }
  for(int i=0;i<kRhythmPositionCount;++i) if(getNormalised(450+i)!=0.25f*state[i]) {
   set(450+i,float(state[i])); sharedRhythmPending[i].store(true,std::memory_order_release);
+ }
+} else if (sharedPlayheadChanged) {
+ for(int step : {previousVisibleStep, visibleStep}) {
+  if(step<0 || step>=ringSteps) continue;
+  const int position=kRhythmPositionMap[ringSteps-1][step];
+  const int active=(((step+ringRotation)%ringSteps)*ringPulses)%ringSteps < ringPulses;
+  const int state=1+active+(step==visibleStep ? 2 : 0);
+  if(getNormalised(450+position)!=0.25f*state) {
+   set(450+position,float(state)); sharedRhythmPending[position].store(true,std::memory_order_release);
+  }
  }
 }
 // Arc length is grain duration relative to the entire rhythm cycle.
