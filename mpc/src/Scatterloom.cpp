@@ -170,7 +170,7 @@ addParam(mpc::boolParam("autoSensitivity", "Auto Sens", true));
 addParam(mpc::boolParam("captureOn", "Capture", true));
 addParam(mpc::floatParam("grain","Grain Length",0.0f,1.0f,0.33f));
 addParam(mpc::floatParam("attack","Attack",0.0f,1.0f,0.0f));
-addParam(mpc::intParam("grainCount", "Recent Grains", 1, 9, 5));
+addParam(mpc::intParam("grainCount", "Recent Grains", 1, 9, 9));
 addParam(mpc::intParam("steps", "Steps", 1, 32, 16));
 addParam(mpc::intParam("pulses", "Pulses", 0, 32, 5));
 addParam(mpc::intParam("rotation", "Rotate", 0, 31, 0));
