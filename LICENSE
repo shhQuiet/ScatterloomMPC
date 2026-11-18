@@ -1,0 +1,20 @@
+Scatterloom for MPC — Source-Available License
+
+Copyright 2026 Elsewave. All rights reserved, except as expressly stated below.
+
+You may view and download the Elsewave-authored source in this repository and
+build and run an unmodified copy of Scatterloom for your own use on devices you
+own or control, subject to the applicable Elsewave software license terms at
+https://elsewave.pages.dev/license/. You may use the plugin to create and
+commercially distribute your own audio without paying royalties to Elsewave.
+
+You may not redistribute, sell, sublicense, or publish the Elsewave-authored
+source, plugin, or modified versions, or reuse them in another product, without
+Elsewave's prior written permission, except to the extent applicable law permits.
+This license does not grant rights to use Elsewave trademarks or artwork beyond
+using the unmodified plugin.
+
+Third-party components are governed by their own licenses, which take precedence
+for those components. See THIRD_PARTY_NOTICES.md and the notices in their files.
+
+THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.

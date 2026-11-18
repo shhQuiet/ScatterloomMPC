@@ -1,0 +1,17 @@
+{
+  "name": "Scatterloom",
+  "manufacturer": "Elsewave",
+  "version": "0.2.0",
+  "format": "vst2",
+  "kind": "effect",
+  "uid": "SEZQ",
+  "numInputs": 2,
+  "numOutputs": 2,
+  "category": "Effect",
+  "file32": "VST/scatterloom-arm32.so",
+  "file64": "VST/scatterloom-arm64.so",
+  "description": "Scatterloom is a granular rhythm effect for MPC standalone.",
+  "author": "Elsewave",
+  "url": "",
+  "license": "See LICENSE and THIRD_PARTY_NOTICES.md"
+}

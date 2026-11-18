@@ -1,0 +1,238 @@
+{
+  "kit": "amber",
+  "pages": [
+    {
+      "name": "MAIN",
+      "controls": [
+        {
+          "param": "Steps",
+          "widget": "knob"
+        },
+        {
+          "param": "Pulses",
+          "widget": "knob"
+        },
+        {
+          "param": "Rotate",
+          "widget": "knob"
+        },
+        {
+          "param": "Grain Length",
+          "widget": "knob"
+        },
+        {
+          "param": "Reverse Chance",
+          "widget": "knob"
+        },
+        {
+          "param": "Play",
+          "widget": "switch"
+        },
+        "empty",
+        {
+          "param": "Recent Grains",
+          "widget": "knob"
+        },
+        {
+          "param": "Division",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        "empty",
+        "empty",
+        {
+          "param": "Capture",
+          "widget": "switch"
+        },
+        "empty",
+        "empty",
+        "empty",
+        "empty"
+      ]
+    },
+    {
+      "name": "MARKOV",
+      "controls": [
+        {
+          "param": "Current Grain",
+          "widget": "knob"
+        },
+        "empty",
+        "empty",
+        {
+          "param": "Patterns",
+          "widget": "slider",
+          "overlay": "menu"
+        },
+        {
+          "param": "Next Grain",
+          "widget": "knob"
+        },
+        "empty",
+        "empty",
+        "empty",
+        {
+          "param": "Probability",
+          "widget": "knob"
+        },
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty"
+      ]
+    },
+    {
+      "name": "MIX",
+      "controls": [
+        {
+          "param": "Grain Pan 1",
+          "widget": "fader",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "Grain Pan 2",
+          "widget": "fader",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "Grain Pan 3",
+          "widget": "fader",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "Grain Pan 4",
+          "widget": "fader",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "Grain Pan 5",
+          "widget": "fader",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "Grain Pan 6",
+          "widget": "fader",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "Grain Pan 7",
+          "widget": "fader",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "Grain Pan 8",
+          "widget": "fader",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "Grain Pan 9",
+          "widget": "fader",
+          "polarity": "bipolar"
+        },
+        "empty",
+        "empty",
+        {
+          "param": "Loop Feedback",
+          "widget": "knob"
+        },
+        "empty",
+        "empty",
+        {
+          "param": "Mix",
+          "widget": "knob"
+        },
+        {
+          "param": "Loop Time",
+          "widget": "knob",
+          "overlay": "menu"
+        }
+      ]
+    },
+    {
+      "name": "GRAINS",
+      "controls": [
+        {
+          "param": "Sensitivity",
+          "widget": "knob"
+        },
+        {
+          "param": "Attack",
+          "widget": "knob"
+        },
+        "empty",
+        {
+          "param": "Confirm Clear",
+          "widget": "switch"
+        },
+        {
+          "param": "Auto Sens",
+          "widget": "switch"
+        },
+        {
+          "param": "Grain Start",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        "empty",
+        {
+          "param": "Rotation Mode",
+          "widget": "slider",
+          "overlay": "menu"
+        },
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty"
+      ]
+    },
+    {
+      "name": "LICENSE",
+      "controls": [
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty"
+      ]
+    },
+    {
+      "name": "INFO",
+      "controls": [
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty"
+      ]
+    }
+  ]
+}
