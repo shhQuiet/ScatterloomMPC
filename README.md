@@ -29,12 +29,12 @@ compiler if needed. Both architectures and the native host simulator have been t
 The `mpc/skins` files are generated output checked in for a portable build.
 After changes to the interface, regenerate them with `mpc/regenerate-skin.py`;
 this currently needs macOS tools, Swift and Python Pillow, and a native build to
-produce `mpc/build/params.json`. Do not hand-edit generated engine code.
+produce `mpc/build/params.json`. The checked-in skin is generated; edit its generators instead of the output.
 
-The MPC-specific engine is preserved in `mpc/generated/Scatterloom.cpp`. It
-contains historical MPC changes; the upstream RNBO patch-to-export workflow
-has not yet been verified to reproduce those changes. Do not overwrite it with
-an export until that workflow is reconciled.
+The MPC-specific engine in `mpc/generated/Scatterloom.cpp` is a maintained C++
+fork of the original RNBO export. Its MPC changes are not reproduced by the
+older RNBO source; do not overwrite this fork with a fresh export. Preserve
+the Cycling '74 copyright and license notice when modifying it.
 
 ## License
 

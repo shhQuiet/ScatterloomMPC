@@ -5504,6 +5504,13 @@ void gen_01_perform(
         [this](int slot, int start, int end) { this->poke_default(this->gen_01_trimStarts_67, start, slot, 0, 0); this->poke_default(this->gen_01_trimEnds_68, end, slot, 0, 0); },
         __gen_01_poolCount_85_value, __gen_01_captureSlot_84_value);
 
+    const number fadeEndCos = rnbo_cos((number)1 * 3.14159265358979323846 * 0.5);
+    const number fadeEndSin = rnbo_sin((number)1 * 3.14159265358979323846 * 0.5);
+    const number safeSteps_282 = this->__wrapped_op_clamp(rnbo_floor(steps + 0.5), 1, 32);
+    const number safePulses_283 = this->__wrapped_op_clamp(rnbo_floor(pulses + 0.5), 0, safeSteps_282);
+    const number safeRotation_284 = this->__wrapped_op_clamp(rnbo_floor(rotation + 0.5), 0, 31);
+    const number divisionIndex_285 = this->__wrapped_op_clamp(rnbo_floor(division + 0.5), 0, 13);
+    const number loopDivisionIndex_293 = this->__wrapped_op_clamp(rnbo_floor(loopDivision + 0.5), 0, 13);
     Index i;
 
     for (i = 0; i < (Index)n; i++) {
@@ -5785,11 +5792,9 @@ void gen_01_perform(
                 peek_12 = result_277[1];
                 peek_11 = result_277[0];
                 number captureIsActive_278 = peek_11 > 0.5;
-                number activeCapturePosition = 0;
-                auto result_279 = this->peek_default(this->gen_01_capturePositions_64, captureIndex, 0);
-                activeCapturePosition = result_279[0];
-
                 if ((bool)(captureIsActive_278)) {
+                    auto result_279 = this->peek_default(this->gen_01_capturePositions_64, captureIndex, 0);
+                    number activeCapturePosition = result_279[0];
 #ifdef SCATTERLOOM_MPC_CAPTURE_GUARD
                     mpcRecordingSlots |= 1u << static_cast<unsigned>(captureIndex);
 #endif
@@ -5813,10 +5818,6 @@ void gen_01_perform(
                 }
             }
 
-            number safeSteps_282 = this->__wrapped_op_clamp(rnbo_floor(steps_23 + 0.5), 1, 32);
-            number safePulses_283 = this->__wrapped_op_clamp(rnbo_floor(pulses_24 + 0.5), 0, safeSteps_282);
-            number safeRotation_284 = this->__wrapped_op_clamp(rnbo_floor(rotation_25 + 0.5), 0, 31);
-            number divisionIndex_285 = this->__wrapped_op_clamp(rnbo_floor(division_31 + 0.5), 0, 13);
             number DivisionStepsPerBeat_286 = 0;
 
             {
@@ -5830,7 +5831,6 @@ void gen_01_perform(
             number hostTempoValid_291 = (hostSamplesPerBeat_16 >= minimumSamplesPerBeat_289) * (hostSamplesPerBeat_16 <= maximumSamplesPerBeat_290);
             __gen_01_lastSamplesPerBeat_170_value = ((bool)(hostTempoValid_291) ? hostSamplesPerBeat_16 : __gen_01_lastSamplesPerBeat_170_value);
             number safeSamplesPerBeat_292 = (__gen_01_lastSamplesPerBeat_170_value > maximumSamplesPerBeat_290 ? maximumSamplesPerBeat_290 : (__gen_01_lastSamplesPerBeat_170_value < minimumSamplesPerBeat_289 ? minimumSamplesPerBeat_289 : __gen_01_lastSamplesPerBeat_170_value));
-            number loopDivisionIndex_293 = this->__wrapped_op_clamp(rnbo_floor(loopDivision_43 + 0.5), 0, 13);
             number DivisionStepsPerBeat_294 = 0;
 
             {
@@ -5870,10 +5870,10 @@ void gen_01_perform(
             __gen_01_rotationOffset_93_value = (rotationEnabled_308 == 0 || (bool)(hostStarted_300) ? 0 : ((bool)(rotationModTrig_312) ? nextRotationOffset_315 : __gen_01_rotationOffset_93_value));
             number effectiveRotation_316 = this->safemod(safeRotation_284 + __gen_01_rotationOffset_93_value, safeSteps_282);
             number sequencerStep_317 = ((bool)(hostStarted_300) ? 0 : __gen_01_stepIndex_87_value);
-            number rotatedStep_318 = this->safemod(sequencerStep_317 + effectiveRotation_316, safeSteps_282);
+            number rotatedStep_318 = clockTrig_305 ? this->safemod(sequencerStep_317 + effectiveRotation_316, safeSteps_282) : 0;
             number EuclideanStepHit_319 = 0;
 
-            {
+            if (clockTrig_305) {
                 auto steps_322 = safeSteps_282;
                 auto pulses_321 = safePulses_283;
                 auto step_320 = rotatedStep_318;
@@ -5904,11 +5904,11 @@ void gen_01_perform(
             number fractionalAdvance_335 = advanceFraction_332 > 0.000001;
             number earlyClockTrig_336 = ((bool)(hostStarted_300) ? 1 : ((bool)(fractionalAdvance_335) ? shiftedTimingWrap_334 : clockTrig_305));
             number futureAdvance_337 = ((bool)(hostStarted_300) ? 0 : advanceWholeSteps_331);
-            number futureStep_338 = this->safemod(sequencerStep_317 + futureAdvance_337, safeSteps_282);
-            number futureRotatedStep_339 = this->safemod(futureStep_338 + effectiveRotation_316, safeSteps_282);
+            number futureStep_338 = earlyClockTrig_336 ? this->safemod(sequencerStep_317 + futureAdvance_337, safeSteps_282) : 0;
+            number futureRotatedStep_339 = earlyClockTrig_336 ? this->safemod(futureStep_338 + effectiveRotation_316, safeSteps_282) : 0;
             number EuclideanStepHit_340 = 0;
 
-            {
+            if (earlyClockTrig_336) {
                 auto steps_343 = safeSteps_282;
                 auto pulses_342 = safePulses_283;
                 auto step_341 = futureRotatedStep_339;
@@ -6234,6 +6234,7 @@ void gen_01_perform(
                 auto position_446 = auditionReadPosition_439;
                 auto releaseSamples_451 = this->maximum(16, this->sr * 0.01);
                 number active_452 = (position_446 < bodySamples_447 + releaseSamples_451) * hasPool_450 * (level_449 > 0);
+                if (active_452) {
 
                 number attackPhase_453 = this->__wrapped_op_clamp(
                     (this->maximum(1, attackSamples_448) == 0. ? 0. : position_446 / this->maximum(1, attackSamples_448)),
@@ -6242,9 +6243,10 @@ void gen_01_perform(
                 );
 
                 number releasePhase_454 = (((releaseSamples_451 == 0. ? 0. : (bodySamples_447 + releaseSamples_451 - position_446) / releaseSamples_451)) > 1 ? 1 : (((releaseSamples_451 == 0. ? 0. : (bodySamples_447 + releaseSamples_451 - position_446) / releaseSamples_451)) < 0 ? 0 : (releaseSamples_451 == 0. ? 0. : (bodySamples_447 + releaseSamples_451 - position_446) / releaseSamples_451)));
-                number attackGain_455 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_453);
-                number releaseGain_456 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_454);
+                number attackGain_455 = attackPhase_453 <= 0 ? 0 : (attackPhase_453 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_453));
+                number releaseGain_456 = releasePhase_454 <= 0 ? 0 : (releasePhase_454 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_454));
                 GrainVoiceWindow_445 = active_452 * this->minimum(attackGain_455, releaseGain_456) * level_449;
+                }
             }
 
             number auditionWindow_457 = GrainVoiceWindow_445;
@@ -6294,7 +6296,7 @@ void gen_01_perform(
             number hasPool_478 = __gen_01_poolCount_85_value > 0;
             number GrainVoiceWindow_479 = 0;
 
-            {
+            if (playHit_409 && __gen_01_nextVoice_97_value == 0) {
                 auto hasPool_484 = hasPool_478;
                 auto level_483 = __gen_01_voiceLevel0_102_value;
                 auto attackSamples_482 = __gen_01_voiceAttack0_101_value;
@@ -6302,6 +6304,7 @@ void gen_01_perform(
                 auto position_480 = __gen_01_voicePos0_99_value;
                 auto releaseSamples_485 = this->maximum(16, this->sr * 0.01);
                 number active_486 = (position_480 < bodySamples_481 + releaseSamples_485) * hasPool_484 * (level_483 > 0);
+                if (active_486 && playHit_409 && __gen_01_nextVoice_97_value == 0) {
 
                 number attackPhase_487 = this->__wrapped_op_clamp(
                     (this->maximum(1, attackSamples_482) == 0. ? 0. : position_480 / this->maximum(1, attackSamples_482)),
@@ -6310,15 +6313,16 @@ void gen_01_perform(
                 );
 
                 number releasePhase_488 = (((releaseSamples_485 == 0. ? 0. : (bodySamples_481 + releaseSamples_485 - position_480) / releaseSamples_485)) > 1 ? 1 : (((releaseSamples_485 == 0. ? 0. : (bodySamples_481 + releaseSamples_485 - position_480) / releaseSamples_485)) < 0 ? 0 : (releaseSamples_485 == 0. ? 0. : (bodySamples_481 + releaseSamples_485 - position_480) / releaseSamples_485)));
-                number attackGain_489 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_487);
-                number releaseGain_490 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_488);
+                number attackGain_489 = attackPhase_487 <= 0 ? 0 : (attackPhase_487 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_487));
+                number releaseGain_490 = releasePhase_488 <= 0 ? 0 : (releasePhase_488 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_488));
                 GrainVoiceWindow_479 = active_486 * this->minimum(attackGain_489, releaseGain_490) * level_483;
+                }
             }
 
             number oldWindow0_491 = GrainVoiceWindow_479;
             number GrainVoiceWindow_492 = 0;
 
-            {
+            if (playHit_409 && __gen_01_nextVoice_97_value == 1) {
                 auto hasPool_497 = hasPool_478;
                 auto level_496 = __gen_01_voiceLevel1_108_value;
                 auto attackSamples_495 = __gen_01_voiceAttack1_107_value;
@@ -6326,6 +6330,7 @@ void gen_01_perform(
                 auto position_493 = __gen_01_voicePos1_105_value;
                 auto releaseSamples_498 = this->maximum(16, this->sr * 0.01);
                 number active_499 = (position_493 < bodySamples_494 + releaseSamples_498) * hasPool_497 * (level_496 > 0);
+                if (active_499 && playHit_409 && __gen_01_nextVoice_97_value == 1) {
 
                 number attackPhase_500 = this->__wrapped_op_clamp(
                     (this->maximum(1, attackSamples_495) == 0. ? 0. : position_493 / this->maximum(1, attackSamples_495)),
@@ -6334,15 +6339,16 @@ void gen_01_perform(
                 );
 
                 number releasePhase_501 = (((releaseSamples_498 == 0. ? 0. : (bodySamples_494 + releaseSamples_498 - position_493) / releaseSamples_498)) > 1 ? 1 : (((releaseSamples_498 == 0. ? 0. : (bodySamples_494 + releaseSamples_498 - position_493) / releaseSamples_498)) < 0 ? 0 : (releaseSamples_498 == 0. ? 0. : (bodySamples_494 + releaseSamples_498 - position_493) / releaseSamples_498)));
-                number attackGain_502 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_500);
-                number releaseGain_503 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_501);
+                number attackGain_502 = attackPhase_500 <= 0 ? 0 : (attackPhase_500 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_500));
+                number releaseGain_503 = releasePhase_501 <= 0 ? 0 : (releasePhase_501 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_501));
                 GrainVoiceWindow_492 = active_499 * this->minimum(attackGain_502, releaseGain_503) * level_496;
+                }
             }
 
             number oldWindow1_504 = GrainVoiceWindow_492;
             number GrainVoiceWindow_505 = 0;
 
-            {
+            if (playHit_409 && __gen_01_nextVoice_97_value == 2) {
                 auto hasPool_510 = hasPool_478;
                 auto level_509 = __gen_01_voiceLevel2_114_value;
                 auto attackSamples_508 = __gen_01_voiceAttack2_113_value;
@@ -6350,6 +6356,7 @@ void gen_01_perform(
                 auto position_506 = __gen_01_voicePos2_111_value;
                 auto releaseSamples_511 = this->maximum(16, this->sr * 0.01);
                 number active_512 = (position_506 < bodySamples_507 + releaseSamples_511) * hasPool_510 * (level_509 > 0);
+                if (active_512 && playHit_409 && __gen_01_nextVoice_97_value == 2) {
 
                 number attackPhase_513 = this->__wrapped_op_clamp(
                     (this->maximum(1, attackSamples_508) == 0. ? 0. : position_506 / this->maximum(1, attackSamples_508)),
@@ -6358,15 +6365,16 @@ void gen_01_perform(
                 );
 
                 number releasePhase_514 = (((releaseSamples_511 == 0. ? 0. : (bodySamples_507 + releaseSamples_511 - position_506) / releaseSamples_511)) > 1 ? 1 : (((releaseSamples_511 == 0. ? 0. : (bodySamples_507 + releaseSamples_511 - position_506) / releaseSamples_511)) < 0 ? 0 : (releaseSamples_511 == 0. ? 0. : (bodySamples_507 + releaseSamples_511 - position_506) / releaseSamples_511)));
-                number attackGain_515 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_513);
-                number releaseGain_516 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_514);
+                number attackGain_515 = attackPhase_513 <= 0 ? 0 : (attackPhase_513 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_513));
+                number releaseGain_516 = releasePhase_514 <= 0 ? 0 : (releasePhase_514 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_514));
                 GrainVoiceWindow_505 = active_512 * this->minimum(attackGain_515, releaseGain_516) * level_509;
+                }
             }
 
             number oldWindow2_517 = GrainVoiceWindow_505;
             number GrainVoiceWindow_518 = 0;
 
-            {
+            if (playHit_409 && __gen_01_nextVoice_97_value == 3) {
                 auto hasPool_523 = hasPool_478;
                 auto level_522 = __gen_01_voiceLevel3_120_value;
                 auto attackSamples_521 = __gen_01_voiceAttack3_119_value;
@@ -6374,6 +6382,7 @@ void gen_01_perform(
                 auto position_519 = __gen_01_voicePos3_117_value;
                 auto releaseSamples_524 = this->maximum(16, this->sr * 0.01);
                 number active_525 = (position_519 < bodySamples_520 + releaseSamples_524) * hasPool_523 * (level_522 > 0);
+                if (active_525 && playHit_409 && __gen_01_nextVoice_97_value == 3) {
 
                 number attackPhase_526 = this->__wrapped_op_clamp(
                     (this->maximum(1, attackSamples_521) == 0. ? 0. : position_519 / this->maximum(1, attackSamples_521)),
@@ -6382,15 +6391,16 @@ void gen_01_perform(
                 );
 
                 number releasePhase_527 = (((releaseSamples_524 == 0. ? 0. : (bodySamples_520 + releaseSamples_524 - position_519) / releaseSamples_524)) > 1 ? 1 : (((releaseSamples_524 == 0. ? 0. : (bodySamples_520 + releaseSamples_524 - position_519) / releaseSamples_524)) < 0 ? 0 : (releaseSamples_524 == 0. ? 0. : (bodySamples_520 + releaseSamples_524 - position_519) / releaseSamples_524)));
-                number attackGain_528 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_526);
-                number releaseGain_529 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_527);
+                number attackGain_528 = attackPhase_526 <= 0 ? 0 : (attackPhase_526 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_526));
+                number releaseGain_529 = releasePhase_527 <= 0 ? 0 : (releasePhase_527 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_527));
                 GrainVoiceWindow_518 = active_525 * this->minimum(attackGain_528, releaseGain_529) * level_522;
+                }
             }
 
             number oldWindow3_530 = GrainVoiceWindow_518;
             number GrainVoiceWindow_531 = 0;
 
-            {
+            if (playHit_409 && __gen_01_nextVoice_97_value == 4) {
                 auto hasPool_536 = hasPool_478;
                 auto level_535 = __gen_01_voiceLevel4_126_value;
                 auto attackSamples_534 = __gen_01_voiceAttack4_125_value;
@@ -6398,6 +6408,7 @@ void gen_01_perform(
                 auto position_532 = __gen_01_voicePos4_123_value;
                 auto releaseSamples_537 = this->maximum(16, this->sr * 0.01);
                 number active_538 = (position_532 < bodySamples_533 + releaseSamples_537) * hasPool_536 * (level_535 > 0);
+                if (active_538 && playHit_409 && __gen_01_nextVoice_97_value == 4) {
 
                 number attackPhase_539 = this->__wrapped_op_clamp(
                     (this->maximum(1, attackSamples_534) == 0. ? 0. : position_532 / this->maximum(1, attackSamples_534)),
@@ -6406,15 +6417,16 @@ void gen_01_perform(
                 );
 
                 number releasePhase_540 = (((releaseSamples_537 == 0. ? 0. : (bodySamples_533 + releaseSamples_537 - position_532) / releaseSamples_537)) > 1 ? 1 : (((releaseSamples_537 == 0. ? 0. : (bodySamples_533 + releaseSamples_537 - position_532) / releaseSamples_537)) < 0 ? 0 : (releaseSamples_537 == 0. ? 0. : (bodySamples_533 + releaseSamples_537 - position_532) / releaseSamples_537)));
-                number attackGain_541 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_539);
-                number releaseGain_542 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_540);
+                number attackGain_541 = attackPhase_539 <= 0 ? 0 : (attackPhase_539 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_539));
+                number releaseGain_542 = releasePhase_540 <= 0 ? 0 : (releasePhase_540 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_540));
                 GrainVoiceWindow_531 = active_538 * this->minimum(attackGain_541, releaseGain_542) * level_535;
+                }
             }
 
             number oldWindow4_543 = GrainVoiceWindow_531;
             number GrainVoiceWindow_544 = 0;
 
-            {
+            if (playHit_409 && __gen_01_nextVoice_97_value == 5) {
                 auto hasPool_549 = hasPool_478;
                 auto level_548 = __gen_01_voiceLevel5_132_value;
                 auto attackSamples_547 = __gen_01_voiceAttack5_131_value;
@@ -6422,6 +6434,7 @@ void gen_01_perform(
                 auto position_545 = __gen_01_voicePos5_129_value;
                 auto releaseSamples_550 = this->maximum(16, this->sr * 0.01);
                 number active_551 = (position_545 < bodySamples_546 + releaseSamples_550) * hasPool_549 * (level_548 > 0);
+                if (active_551 && playHit_409 && __gen_01_nextVoice_97_value == 5) {
 
                 number attackPhase_552 = this->__wrapped_op_clamp(
                     (this->maximum(1, attackSamples_547) == 0. ? 0. : position_545 / this->maximum(1, attackSamples_547)),
@@ -6430,15 +6443,16 @@ void gen_01_perform(
                 );
 
                 number releasePhase_553 = (((releaseSamples_550 == 0. ? 0. : (bodySamples_546 + releaseSamples_550 - position_545) / releaseSamples_550)) > 1 ? 1 : (((releaseSamples_550 == 0. ? 0. : (bodySamples_546 + releaseSamples_550 - position_545) / releaseSamples_550)) < 0 ? 0 : (releaseSamples_550 == 0. ? 0. : (bodySamples_546 + releaseSamples_550 - position_545) / releaseSamples_550)));
-                number attackGain_554 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_552);
-                number releaseGain_555 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_553);
+                number attackGain_554 = attackPhase_552 <= 0 ? 0 : (attackPhase_552 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_552));
+                number releaseGain_555 = releasePhase_553 <= 0 ? 0 : (releasePhase_553 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_553));
                 GrainVoiceWindow_544 = active_551 * this->minimum(attackGain_554, releaseGain_555) * level_548;
+                }
             }
 
             number oldWindow5_556 = GrainVoiceWindow_544;
             number GrainVoiceWindow_557 = 0;
 
-            {
+            if (playHit_409 && __gen_01_nextVoice_97_value == 6) {
                 auto hasPool_562 = hasPool_478;
                 auto level_561 = __gen_01_voiceLevel6_138_value;
                 auto attackSamples_560 = __gen_01_voiceAttack6_137_value;
@@ -6446,6 +6460,7 @@ void gen_01_perform(
                 auto position_558 = __gen_01_voicePos6_135_value;
                 auto releaseSamples_563 = this->maximum(16, this->sr * 0.01);
                 number active_564 = (position_558 < bodySamples_559 + releaseSamples_563) * hasPool_562 * (level_561 > 0);
+                if (active_564 && playHit_409 && __gen_01_nextVoice_97_value == 6) {
 
                 number attackPhase_565 = this->__wrapped_op_clamp(
                     (this->maximum(1, attackSamples_560) == 0. ? 0. : position_558 / this->maximum(1, attackSamples_560)),
@@ -6454,15 +6469,16 @@ void gen_01_perform(
                 );
 
                 number releasePhase_566 = (((releaseSamples_563 == 0. ? 0. : (bodySamples_559 + releaseSamples_563 - position_558) / releaseSamples_563)) > 1 ? 1 : (((releaseSamples_563 == 0. ? 0. : (bodySamples_559 + releaseSamples_563 - position_558) / releaseSamples_563)) < 0 ? 0 : (releaseSamples_563 == 0. ? 0. : (bodySamples_559 + releaseSamples_563 - position_558) / releaseSamples_563)));
-                number attackGain_567 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_565);
-                number releaseGain_568 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_566);
+                number attackGain_567 = attackPhase_565 <= 0 ? 0 : (attackPhase_565 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_565));
+                number releaseGain_568 = releasePhase_566 <= 0 ? 0 : (releasePhase_566 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_566));
                 GrainVoiceWindow_557 = active_564 * this->minimum(attackGain_567, releaseGain_568) * level_561;
+                }
             }
 
             number oldWindow6_569 = GrainVoiceWindow_557;
             number GrainVoiceWindow_570 = 0;
 
-            {
+            if (playHit_409 && __gen_01_nextVoice_97_value == 7) {
                 auto hasPool_575 = hasPool_478;
                 auto level_574 = __gen_01_voiceLevel7_144_value;
                 auto attackSamples_573 = __gen_01_voiceAttack7_143_value;
@@ -6470,6 +6486,7 @@ void gen_01_perform(
                 auto position_571 = __gen_01_voicePos7_141_value;
                 auto releaseSamples_576 = this->maximum(16, this->sr * 0.01);
                 number active_577 = (position_571 < bodySamples_572 + releaseSamples_576) * hasPool_575 * (level_574 > 0);
+                if (active_577 && playHit_409 && __gen_01_nextVoice_97_value == 7) {
 
                 number attackPhase_578 = this->__wrapped_op_clamp(
                     (this->maximum(1, attackSamples_573) == 0. ? 0. : position_571 / this->maximum(1, attackSamples_573)),
@@ -6478,9 +6495,10 @@ void gen_01_perform(
                 );
 
                 number releasePhase_579 = (((releaseSamples_576 == 0. ? 0. : (bodySamples_572 + releaseSamples_576 - position_571) / releaseSamples_576)) > 1 ? 1 : (((releaseSamples_576 == 0. ? 0. : (bodySamples_572 + releaseSamples_576 - position_571) / releaseSamples_576)) < 0 ? 0 : (releaseSamples_576 == 0. ? 0. : (bodySamples_572 + releaseSamples_576 - position_571) / releaseSamples_576)));
-                number attackGain_580 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_578);
-                number releaseGain_581 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_579);
+                number attackGain_580 = attackPhase_578 <= 0 ? 0 : (attackPhase_578 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_578));
+                number releaseGain_581 = releasePhase_579 <= 0 ? 0 : (releasePhase_579 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_579));
                 GrainVoiceWindow_570 = active_577 * this->minimum(attackGain_580, releaseGain_581) * level_574;
+                }
             }
 
             number oldWindow7_582 = GrainVoiceWindow_570;
@@ -6519,6 +6537,7 @@ void gen_01_perform(
                 auto position_609 = readPos0_600;
                 auto releaseSamples_614 = this->maximum(16, this->sr * 0.01);
                 number active_615 = (position_609 < bodySamples_610 + releaseSamples_614) * hasPool_613 * (level_612 > 0);
+                if (active_615) {
 
                 number attackPhase_616 = this->__wrapped_op_clamp(
                     (this->maximum(1, attackSamples_611) == 0. ? 0. : position_609 / this->maximum(1, attackSamples_611)),
@@ -6527,15 +6546,18 @@ void gen_01_perform(
                 );
 
                 number releasePhase_617 = (((releaseSamples_614 == 0. ? 0. : (bodySamples_610 + releaseSamples_614 - position_609) / releaseSamples_614)) > 1 ? 1 : (((releaseSamples_614 == 0. ? 0. : (bodySamples_610 + releaseSamples_614 - position_609) / releaseSamples_614)) < 0 ? 0 : (releaseSamples_614 == 0. ? 0. : (bodySamples_610 + releaseSamples_614 - position_609) / releaseSamples_614)));
-                number attackGain_618 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_616);
-                number releaseGain_619 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_617);
+                number attackGain_618 = attackPhase_616 <= 0 ? 0 : (attackPhase_616 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_616));
+                number releaseGain_619 = releasePhase_617 <= 0 ? 0 : (releasePhase_617 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_617));
                 GrainVoiceWindow_608 = active_615 * this->minimum(attackGain_618, releaseGain_619) * level_612;
+                }
             }
 
             number window0_620 = GrainVoiceWindow_608;
 #ifdef SCATTERLOOM_MPC_CAPTURE_GUARD
             window0_620 *= (mpcRecordingSlots & (1u << static_cast<unsigned>(readSlot0_599))) == 0;
 #endif
+            number voiceL0_631 = 0, voiceR0_635 = 0;
+            if (window0_620 != 0) {
             number GrainReadPosition_621 = 0;
 
             {
@@ -6550,9 +6572,11 @@ void gen_01_perform(
             number voiceIndex0_627 = readSlot0_599 * slotSize_214 + ((readStart0_605 + samplePos0_626 > slotSize_214 - 2 ? slotSize_214 - 2 : (readStart0_605 + samplePos0_626 < 0 ? 0 : readStart0_605 + samplePos0_626)));
             number peek_62 = 0;
             number peek_63 = 0;
-            auto result_628 = this->peek_default(this->gen_01_poolL_61, voiceIndex0_627, 0);
-            peek_63 = result_628[1];
-            peek_62 = result_628[0];
+            if (window0_620 != 0) {
+                auto result_628 = this->peek_default(this->gen_01_poolL_61, voiceIndex0_627, 0);
+                peek_63 = result_628[1];
+                peek_62 = result_628[0];
+            }
             number PanLeftGain_629 = 0;
 
             {
@@ -6560,12 +6584,14 @@ void gen_01_perform(
                 PanLeftGain_629 = (pan_630 > 0 ? 1 - pan_630 : 1);
             }
 
-            number voiceL0_631 = peek_62 * window0_620 * PanLeftGain_629;
+            voiceL0_631 = peek_62 * window0_620 * PanLeftGain_629;
             number peek_64 = 0;
             number peek_65 = 0;
-            auto result_632 = this->peek_default(this->gen_01_poolR_62, voiceIndex0_627, 0);
-            peek_65 = result_632[1];
-            peek_64 = result_632[0];
+            if (window0_620 != 0) {
+                auto result_632 = this->peek_default(this->gen_01_poolR_62, voiceIndex0_627, 0);
+                peek_65 = result_632[1];
+                peek_64 = result_632[0];
+            }
             number PanRightGain_633 = 0;
 
             {
@@ -6573,9 +6599,10 @@ void gen_01_perform(
                 PanRightGain_633 = (pan_634 < 0 ? 1 + pan_634 : 1);
             }
 
-            number voiceR0_635 = peek_64 * window0_620 * PanRightGain_633;
+            voiceR0_635 = peek_64 * window0_620 * PanRightGain_633;
             if (readPan0_606 < 0) voiceL0_631 = (voiceL0_631 + peek_64 * window0_620 * (-readPan0_606)) / (1 - readPan0_606);
             if (readPan0_606 > 0) voiceR0_635 = (voiceR0_635 + peek_62 * window0_620 * readPan0_606) / (1 + readPan0_606);
+            }
             __gen_01_voiceSlot0_98_value = ((bool)(resetNow_233) ? 0 : readSlot0_599);
             __gen_01_voicePos0_99_value = ((bool)(resetNow_233) ? 1048576 : readPos0_600 + active0_607);
             __gen_01_voiceBody0_100_value = readBody0_601;
@@ -6603,6 +6630,7 @@ void gen_01_perform(
                 auto position_646 = readPos1_637;
                 auto releaseSamples_651 = this->maximum(16, this->sr * 0.01);
                 number active_652 = (position_646 < bodySamples_647 + releaseSamples_651) * hasPool_650 * (level_649 > 0);
+                if (active_652) {
 
                 number attackPhase_653 = this->__wrapped_op_clamp(
                     (this->maximum(1, attackSamples_648) == 0. ? 0. : position_646 / this->maximum(1, attackSamples_648)),
@@ -6611,15 +6639,18 @@ void gen_01_perform(
                 );
 
                 number releasePhase_654 = (((releaseSamples_651 == 0. ? 0. : (bodySamples_647 + releaseSamples_651 - position_646) / releaseSamples_651)) > 1 ? 1 : (((releaseSamples_651 == 0. ? 0. : (bodySamples_647 + releaseSamples_651 - position_646) / releaseSamples_651)) < 0 ? 0 : (releaseSamples_651 == 0. ? 0. : (bodySamples_647 + releaseSamples_651 - position_646) / releaseSamples_651)));
-                number attackGain_655 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_653);
-                number releaseGain_656 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_654);
+                number attackGain_655 = attackPhase_653 <= 0 ? 0 : (attackPhase_653 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_653));
+                number releaseGain_656 = releasePhase_654 <= 0 ? 0 : (releasePhase_654 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_654));
                 GrainVoiceWindow_645 = active_652 * this->minimum(attackGain_655, releaseGain_656) * level_649;
+                }
             }
 
             number window1_657 = GrainVoiceWindow_645;
 #ifdef SCATTERLOOM_MPC_CAPTURE_GUARD
             window1_657 *= (mpcRecordingSlots & (1u << static_cast<unsigned>(readSlot1_636))) == 0;
 #endif
+            number voiceL1_668 = 0, voiceR1_672 = 0;
+            if (window1_657 != 0) {
             number GrainReadPosition_658 = 0;
 
             {
@@ -6634,9 +6665,11 @@ void gen_01_perform(
             number voiceIndex1_664 = readSlot1_636 * slotSize_214 + ((readStart1_642 + samplePos1_663 > slotSize_214 - 2 ? slotSize_214 - 2 : (readStart1_642 + samplePos1_663 < 0 ? 0 : readStart1_642 + samplePos1_663)));
             number peek_66 = 0;
             number peek_67 = 0;
-            auto result_665 = this->peek_default(this->gen_01_poolL_61, voiceIndex1_664, 0);
-            peek_67 = result_665[1];
-            peek_66 = result_665[0];
+            if (window1_657 != 0) {
+                auto result_665 = this->peek_default(this->gen_01_poolL_61, voiceIndex1_664, 0);
+                peek_67 = result_665[1];
+                peek_66 = result_665[0];
+            }
             number PanLeftGain_666 = 0;
 
             {
@@ -6644,12 +6677,14 @@ void gen_01_perform(
                 PanLeftGain_666 = (pan_667 > 0 ? 1 - pan_667 : 1);
             }
 
-            number voiceL1_668 = peek_66 * window1_657 * PanLeftGain_666;
+            voiceL1_668 = peek_66 * window1_657 * PanLeftGain_666;
             number peek_68 = 0;
             number peek_69 = 0;
-            auto result_669 = this->peek_default(this->gen_01_poolR_62, voiceIndex1_664, 0);
-            peek_69 = result_669[1];
-            peek_68 = result_669[0];
+            if (window1_657 != 0) {
+                auto result_669 = this->peek_default(this->gen_01_poolR_62, voiceIndex1_664, 0);
+                peek_69 = result_669[1];
+                peek_68 = result_669[0];
+            }
             number PanRightGain_670 = 0;
 
             {
@@ -6657,9 +6692,10 @@ void gen_01_perform(
                 PanRightGain_670 = (pan_671 < 0 ? 1 + pan_671 : 1);
             }
 
-            number voiceR1_672 = peek_68 * window1_657 * PanRightGain_670;
+            voiceR1_672 = peek_68 * window1_657 * PanRightGain_670;
             if (readPan1_643 < 0) voiceL1_668 = (voiceL1_668 + peek_68 * window1_657 * (-readPan1_643)) / (1 - readPan1_643);
             if (readPan1_643 > 0) voiceR1_672 = (voiceR1_672 + peek_66 * window1_657 * readPan1_643) / (1 + readPan1_643);
+            }
             __gen_01_voiceSlot1_104_value = ((bool)(resetNow_233) ? 0 : readSlot1_636);
             __gen_01_voicePos1_105_value = ((bool)(resetNow_233) ? 1048576 : readPos1_637 + active1_644);
             __gen_01_voiceBody1_106_value = readBody1_638;
@@ -6687,6 +6723,7 @@ void gen_01_perform(
                 auto position_683 = readPos2_674;
                 auto releaseSamples_688 = this->maximum(16, this->sr * 0.01);
                 number active_689 = (position_683 < bodySamples_684 + releaseSamples_688) * hasPool_687 * (level_686 > 0);
+                if (active_689) {
 
                 number attackPhase_690 = this->__wrapped_op_clamp(
                     (this->maximum(1, attackSamples_685) == 0. ? 0. : position_683 / this->maximum(1, attackSamples_685)),
@@ -6695,15 +6732,18 @@ void gen_01_perform(
                 );
 
                 number releasePhase_691 = (((releaseSamples_688 == 0. ? 0. : (bodySamples_684 + releaseSamples_688 - position_683) / releaseSamples_688)) > 1 ? 1 : (((releaseSamples_688 == 0. ? 0. : (bodySamples_684 + releaseSamples_688 - position_683) / releaseSamples_688)) < 0 ? 0 : (releaseSamples_688 == 0. ? 0. : (bodySamples_684 + releaseSamples_688 - position_683) / releaseSamples_688)));
-                number attackGain_692 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_690);
-                number releaseGain_693 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_691);
+                number attackGain_692 = attackPhase_690 <= 0 ? 0 : (attackPhase_690 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_690));
+                number releaseGain_693 = releasePhase_691 <= 0 ? 0 : (releasePhase_691 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_691));
                 GrainVoiceWindow_682 = active_689 * this->minimum(attackGain_692, releaseGain_693) * level_686;
+                }
             }
 
             number window2_694 = GrainVoiceWindow_682;
 #ifdef SCATTERLOOM_MPC_CAPTURE_GUARD
             window2_694 *= (mpcRecordingSlots & (1u << static_cast<unsigned>(readSlot2_673))) == 0;
 #endif
+            number voiceL2_705 = 0, voiceR2_709 = 0;
+            if (window2_694 != 0) {
             number GrainReadPosition_695 = 0;
 
             {
@@ -6718,9 +6758,11 @@ void gen_01_perform(
             number voiceIndex2_701 = readSlot2_673 * slotSize_214 + ((readStart2_679 + samplePos2_700 > slotSize_214 - 2 ? slotSize_214 - 2 : (readStart2_679 + samplePos2_700 < 0 ? 0 : readStart2_679 + samplePos2_700)));
             number peek_70 = 0;
             number peek_71 = 0;
-            auto result_702 = this->peek_default(this->gen_01_poolL_61, voiceIndex2_701, 0);
-            peek_71 = result_702[1];
-            peek_70 = result_702[0];
+            if (window2_694 != 0) {
+                auto result_702 = this->peek_default(this->gen_01_poolL_61, voiceIndex2_701, 0);
+                peek_71 = result_702[1];
+                peek_70 = result_702[0];
+            }
             number PanLeftGain_703 = 0;
 
             {
@@ -6728,12 +6770,14 @@ void gen_01_perform(
                 PanLeftGain_703 = (pan_704 > 0 ? 1 - pan_704 : 1);
             }
 
-            number voiceL2_705 = peek_70 * window2_694 * PanLeftGain_703;
+            voiceL2_705 = peek_70 * window2_694 * PanLeftGain_703;
             number peek_72 = 0;
             number peek_73 = 0;
-            auto result_706 = this->peek_default(this->gen_01_poolR_62, voiceIndex2_701, 0);
-            peek_73 = result_706[1];
-            peek_72 = result_706[0];
+            if (window2_694 != 0) {
+                auto result_706 = this->peek_default(this->gen_01_poolR_62, voiceIndex2_701, 0);
+                peek_73 = result_706[1];
+                peek_72 = result_706[0];
+            }
             number PanRightGain_707 = 0;
 
             {
@@ -6741,9 +6785,10 @@ void gen_01_perform(
                 PanRightGain_707 = (pan_708 < 0 ? 1 + pan_708 : 1);
             }
 
-            number voiceR2_709 = peek_72 * window2_694 * PanRightGain_707;
+            voiceR2_709 = peek_72 * window2_694 * PanRightGain_707;
             if (readPan2_680 < 0) voiceL2_705 = (voiceL2_705 + peek_72 * window2_694 * (-readPan2_680)) / (1 - readPan2_680);
             if (readPan2_680 > 0) voiceR2_709 = (voiceR2_709 + peek_70 * window2_694 * readPan2_680) / (1 + readPan2_680);
+            }
             __gen_01_voiceSlot2_110_value = ((bool)(resetNow_233) ? 0 : readSlot2_673);
             __gen_01_voicePos2_111_value = ((bool)(resetNow_233) ? 1048576 : readPos2_674 + active2_681);
             __gen_01_voiceBody2_112_value = readBody2_675;
@@ -6771,6 +6816,7 @@ void gen_01_perform(
                 auto position_720 = readPos3_711;
                 auto releaseSamples_725 = this->maximum(16, this->sr * 0.01);
                 number active_726 = (position_720 < bodySamples_721 + releaseSamples_725) * hasPool_724 * (level_723 > 0);
+                if (active_726) {
 
                 number attackPhase_727 = this->__wrapped_op_clamp(
                     (this->maximum(1, attackSamples_722) == 0. ? 0. : position_720 / this->maximum(1, attackSamples_722)),
@@ -6779,15 +6825,18 @@ void gen_01_perform(
                 );
 
                 number releasePhase_728 = (((releaseSamples_725 == 0. ? 0. : (bodySamples_721 + releaseSamples_725 - position_720) / releaseSamples_725)) > 1 ? 1 : (((releaseSamples_725 == 0. ? 0. : (bodySamples_721 + releaseSamples_725 - position_720) / releaseSamples_725)) < 0 ? 0 : (releaseSamples_725 == 0. ? 0. : (bodySamples_721 + releaseSamples_725 - position_720) / releaseSamples_725)));
-                number attackGain_729 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_727);
-                number releaseGain_730 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_728);
+                number attackGain_729 = attackPhase_727 <= 0 ? 0 : (attackPhase_727 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_727));
+                number releaseGain_730 = releasePhase_728 <= 0 ? 0 : (releasePhase_728 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_728));
                 GrainVoiceWindow_719 = active_726 * this->minimum(attackGain_729, releaseGain_730) * level_723;
+                }
             }
 
             number window3_731 = GrainVoiceWindow_719;
 #ifdef SCATTERLOOM_MPC_CAPTURE_GUARD
             window3_731 *= (mpcRecordingSlots & (1u << static_cast<unsigned>(readSlot3_710))) == 0;
 #endif
+            number voiceL3_742 = 0, voiceR3_746 = 0;
+            if (window3_731 != 0) {
             number GrainReadPosition_732 = 0;
 
             {
@@ -6802,9 +6851,11 @@ void gen_01_perform(
             number voiceIndex3_738 = readSlot3_710 * slotSize_214 + ((readStart3_716 + samplePos3_737 > slotSize_214 - 2 ? slotSize_214 - 2 : (readStart3_716 + samplePos3_737 < 0 ? 0 : readStart3_716 + samplePos3_737)));
             number peek_74 = 0;
             number peek_75 = 0;
-            auto result_739 = this->peek_default(this->gen_01_poolL_61, voiceIndex3_738, 0);
-            peek_75 = result_739[1];
-            peek_74 = result_739[0];
+            if (window3_731 != 0) {
+                auto result_739 = this->peek_default(this->gen_01_poolL_61, voiceIndex3_738, 0);
+                peek_75 = result_739[1];
+                peek_74 = result_739[0];
+            }
             number PanLeftGain_740 = 0;
 
             {
@@ -6812,12 +6863,14 @@ void gen_01_perform(
                 PanLeftGain_740 = (pan_741 > 0 ? 1 - pan_741 : 1);
             }
 
-            number voiceL3_742 = peek_74 * window3_731 * PanLeftGain_740;
+            voiceL3_742 = peek_74 * window3_731 * PanLeftGain_740;
             number peek_76 = 0;
             number peek_77 = 0;
-            auto result_743 = this->peek_default(this->gen_01_poolR_62, voiceIndex3_738, 0);
-            peek_77 = result_743[1];
-            peek_76 = result_743[0];
+            if (window3_731 != 0) {
+                auto result_743 = this->peek_default(this->gen_01_poolR_62, voiceIndex3_738, 0);
+                peek_77 = result_743[1];
+                peek_76 = result_743[0];
+            }
             number PanRightGain_744 = 0;
 
             {
@@ -6825,9 +6878,10 @@ void gen_01_perform(
                 PanRightGain_744 = (pan_745 < 0 ? 1 + pan_745 : 1);
             }
 
-            number voiceR3_746 = peek_76 * window3_731 * PanRightGain_744;
+            voiceR3_746 = peek_76 * window3_731 * PanRightGain_744;
             if (readPan3_717 < 0) voiceL3_742 = (voiceL3_742 + peek_76 * window3_731 * (-readPan3_717)) / (1 - readPan3_717);
             if (readPan3_717 > 0) voiceR3_746 = (voiceR3_746 + peek_74 * window3_731 * readPan3_717) / (1 + readPan3_717);
+            }
             __gen_01_voiceSlot3_116_value = ((bool)(resetNow_233) ? 0 : readSlot3_710);
             __gen_01_voicePos3_117_value = ((bool)(resetNow_233) ? 1048576 : readPos3_711 + active3_718);
             __gen_01_voiceBody3_118_value = readBody3_712;
@@ -6855,6 +6909,7 @@ void gen_01_perform(
                 auto position_757 = readPos4_748;
                 auto releaseSamples_762 = this->maximum(16, this->sr * 0.01);
                 number active_763 = (position_757 < bodySamples_758 + releaseSamples_762) * hasPool_761 * (level_760 > 0);
+                if (active_763) {
 
                 number attackPhase_764 = this->__wrapped_op_clamp(
                     (this->maximum(1, attackSamples_759) == 0. ? 0. : position_757 / this->maximum(1, attackSamples_759)),
@@ -6863,15 +6918,18 @@ void gen_01_perform(
                 );
 
                 number releasePhase_765 = (((releaseSamples_762 == 0. ? 0. : (bodySamples_758 + releaseSamples_762 - position_757) / releaseSamples_762)) > 1 ? 1 : (((releaseSamples_762 == 0. ? 0. : (bodySamples_758 + releaseSamples_762 - position_757) / releaseSamples_762)) < 0 ? 0 : (releaseSamples_762 == 0. ? 0. : (bodySamples_758 + releaseSamples_762 - position_757) / releaseSamples_762)));
-                number attackGain_766 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_764);
-                number releaseGain_767 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_765);
+                number attackGain_766 = attackPhase_764 <= 0 ? 0 : (attackPhase_764 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_764));
+                number releaseGain_767 = releasePhase_765 <= 0 ? 0 : (releasePhase_765 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_765));
                 GrainVoiceWindow_756 = active_763 * this->minimum(attackGain_766, releaseGain_767) * level_760;
+                }
             }
 
             number window4_768 = GrainVoiceWindow_756;
 #ifdef SCATTERLOOM_MPC_CAPTURE_GUARD
             window4_768 *= (mpcRecordingSlots & (1u << static_cast<unsigned>(readSlot4_747))) == 0;
 #endif
+            number voiceL4_779 = 0, voiceR4_783 = 0;
+            if (window4_768 != 0) {
             number GrainReadPosition_769 = 0;
 
             {
@@ -6886,9 +6944,11 @@ void gen_01_perform(
             number voiceIndex4_775 = readSlot4_747 * slotSize_214 + ((readStart4_753 + samplePos4_774 > slotSize_214 - 2 ? slotSize_214 - 2 : (readStart4_753 + samplePos4_774 < 0 ? 0 : readStart4_753 + samplePos4_774)));
             number peek_78 = 0;
             number peek_79 = 0;
-            auto result_776 = this->peek_default(this->gen_01_poolL_61, voiceIndex4_775, 0);
-            peek_79 = result_776[1];
-            peek_78 = result_776[0];
+            if (window4_768 != 0) {
+                auto result_776 = this->peek_default(this->gen_01_poolL_61, voiceIndex4_775, 0);
+                peek_79 = result_776[1];
+                peek_78 = result_776[0];
+            }
             number PanLeftGain_777 = 0;
 
             {
@@ -6896,12 +6956,14 @@ void gen_01_perform(
                 PanLeftGain_777 = (pan_778 > 0 ? 1 - pan_778 : 1);
             }
 
-            number voiceL4_779 = peek_78 * window4_768 * PanLeftGain_777;
+            voiceL4_779 = peek_78 * window4_768 * PanLeftGain_777;
             number peek_80 = 0;
             number peek_81 = 0;
-            auto result_780 = this->peek_default(this->gen_01_poolR_62, voiceIndex4_775, 0);
-            peek_81 = result_780[1];
-            peek_80 = result_780[0];
+            if (window4_768 != 0) {
+                auto result_780 = this->peek_default(this->gen_01_poolR_62, voiceIndex4_775, 0);
+                peek_81 = result_780[1];
+                peek_80 = result_780[0];
+            }
             number PanRightGain_781 = 0;
 
             {
@@ -6909,9 +6971,10 @@ void gen_01_perform(
                 PanRightGain_781 = (pan_782 < 0 ? 1 + pan_782 : 1);
             }
 
-            number voiceR4_783 = peek_80 * window4_768 * PanRightGain_781;
+            voiceR4_783 = peek_80 * window4_768 * PanRightGain_781;
             if (readPan4_754 < 0) voiceL4_779 = (voiceL4_779 + peek_80 * window4_768 * (-readPan4_754)) / (1 - readPan4_754);
             if (readPan4_754 > 0) voiceR4_783 = (voiceR4_783 + peek_78 * window4_768 * readPan4_754) / (1 + readPan4_754);
+            }
             __gen_01_voiceSlot4_122_value = ((bool)(resetNow_233) ? 0 : readSlot4_747);
             __gen_01_voicePos4_123_value = ((bool)(resetNow_233) ? 1048576 : readPos4_748 + active4_755);
             __gen_01_voiceBody4_124_value = readBody4_749;
@@ -6939,6 +7002,7 @@ void gen_01_perform(
                 auto position_794 = readPos5_785;
                 auto releaseSamples_799 = this->maximum(16, this->sr * 0.01);
                 number active_800 = (position_794 < bodySamples_795 + releaseSamples_799) * hasPool_798 * (level_797 > 0);
+                if (active_800) {
 
                 number attackPhase_801 = this->__wrapped_op_clamp(
                     (this->maximum(1, attackSamples_796) == 0. ? 0. : position_794 / this->maximum(1, attackSamples_796)),
@@ -6947,15 +7011,18 @@ void gen_01_perform(
                 );
 
                 number releasePhase_802 = (((releaseSamples_799 == 0. ? 0. : (bodySamples_795 + releaseSamples_799 - position_794) / releaseSamples_799)) > 1 ? 1 : (((releaseSamples_799 == 0. ? 0. : (bodySamples_795 + releaseSamples_799 - position_794) / releaseSamples_799)) < 0 ? 0 : (releaseSamples_799 == 0. ? 0. : (bodySamples_795 + releaseSamples_799 - position_794) / releaseSamples_799)));
-                number attackGain_803 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_801);
-                number releaseGain_804 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_802);
+                number attackGain_803 = attackPhase_801 <= 0 ? 0 : (attackPhase_801 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_801));
+                number releaseGain_804 = releasePhase_802 <= 0 ? 0 : (releasePhase_802 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_802));
                 GrainVoiceWindow_793 = active_800 * this->minimum(attackGain_803, releaseGain_804) * level_797;
+                }
             }
 
             number window5_805 = GrainVoiceWindow_793;
 #ifdef SCATTERLOOM_MPC_CAPTURE_GUARD
             window5_805 *= (mpcRecordingSlots & (1u << static_cast<unsigned>(readSlot5_784))) == 0;
 #endif
+            number voiceL5_816 = 0, voiceR5_820 = 0;
+            if (window5_805 != 0) {
             number GrainReadPosition_806 = 0;
 
             {
@@ -6970,9 +7037,11 @@ void gen_01_perform(
             number voiceIndex5_812 = readSlot5_784 * slotSize_214 + ((readStart5_790 + samplePos5_811 > slotSize_214 - 2 ? slotSize_214 - 2 : (readStart5_790 + samplePos5_811 < 0 ? 0 : readStart5_790 + samplePos5_811)));
             number peek_82 = 0;
             number peek_83 = 0;
-            auto result_813 = this->peek_default(this->gen_01_poolL_61, voiceIndex5_812, 0);
-            peek_83 = result_813[1];
-            peek_82 = result_813[0];
+            if (window5_805 != 0) {
+                auto result_813 = this->peek_default(this->gen_01_poolL_61, voiceIndex5_812, 0);
+                peek_83 = result_813[1];
+                peek_82 = result_813[0];
+            }
             number PanLeftGain_814 = 0;
 
             {
@@ -6980,12 +7049,14 @@ void gen_01_perform(
                 PanLeftGain_814 = (pan_815 > 0 ? 1 - pan_815 : 1);
             }
 
-            number voiceL5_816 = peek_82 * window5_805 * PanLeftGain_814;
+            voiceL5_816 = peek_82 * window5_805 * PanLeftGain_814;
             number peek_84 = 0;
             number peek_85 = 0;
-            auto result_817 = this->peek_default(this->gen_01_poolR_62, voiceIndex5_812, 0);
-            peek_85 = result_817[1];
-            peek_84 = result_817[0];
+            if (window5_805 != 0) {
+                auto result_817 = this->peek_default(this->gen_01_poolR_62, voiceIndex5_812, 0);
+                peek_85 = result_817[1];
+                peek_84 = result_817[0];
+            }
             number PanRightGain_818 = 0;
 
             {
@@ -6993,9 +7064,10 @@ void gen_01_perform(
                 PanRightGain_818 = (pan_819 < 0 ? 1 + pan_819 : 1);
             }
 
-            number voiceR5_820 = peek_84 * window5_805 * PanRightGain_818;
+            voiceR5_820 = peek_84 * window5_805 * PanRightGain_818;
             if (readPan5_791 < 0) voiceL5_816 = (voiceL5_816 + peek_84 * window5_805 * (-readPan5_791)) / (1 - readPan5_791);
             if (readPan5_791 > 0) voiceR5_820 = (voiceR5_820 + peek_82 * window5_805 * readPan5_791) / (1 + readPan5_791);
+            }
             __gen_01_voiceSlot5_128_value = ((bool)(resetNow_233) ? 0 : readSlot5_784);
             __gen_01_voicePos5_129_value = ((bool)(resetNow_233) ? 1048576 : readPos5_785 + active5_792);
             __gen_01_voiceBody5_130_value = readBody5_786;
@@ -7023,6 +7095,7 @@ void gen_01_perform(
                 auto position_831 = readPos6_822;
                 auto releaseSamples_836 = this->maximum(16, this->sr * 0.01);
                 number active_837 = (position_831 < bodySamples_832 + releaseSamples_836) * hasPool_835 * (level_834 > 0);
+                if (active_837) {
 
                 number attackPhase_838 = this->__wrapped_op_clamp(
                     (this->maximum(1, attackSamples_833) == 0. ? 0. : position_831 / this->maximum(1, attackSamples_833)),
@@ -7031,15 +7104,18 @@ void gen_01_perform(
                 );
 
                 number releasePhase_839 = (((releaseSamples_836 == 0. ? 0. : (bodySamples_832 + releaseSamples_836 - position_831) / releaseSamples_836)) > 1 ? 1 : (((releaseSamples_836 == 0. ? 0. : (bodySamples_832 + releaseSamples_836 - position_831) / releaseSamples_836)) < 0 ? 0 : (releaseSamples_836 == 0. ? 0. : (bodySamples_832 + releaseSamples_836 - position_831) / releaseSamples_836)));
-                number attackGain_840 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_838);
-                number releaseGain_841 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_839);
+                number attackGain_840 = attackPhase_838 <= 0 ? 0 : (attackPhase_838 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_838));
+                number releaseGain_841 = releasePhase_839 <= 0 ? 0 : (releasePhase_839 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_839));
                 GrainVoiceWindow_830 = active_837 * this->minimum(attackGain_840, releaseGain_841) * level_834;
+                }
             }
 
             number window6_842 = GrainVoiceWindow_830;
 #ifdef SCATTERLOOM_MPC_CAPTURE_GUARD
             window6_842 *= (mpcRecordingSlots & (1u << static_cast<unsigned>(readSlot6_821))) == 0;
 #endif
+            number voiceL6_853 = 0, voiceR6_857 = 0;
+            if (window6_842 != 0) {
             number GrainReadPosition_843 = 0;
 
             {
@@ -7054,9 +7130,11 @@ void gen_01_perform(
             number voiceIndex6_849 = readSlot6_821 * slotSize_214 + ((readStart6_827 + samplePos6_848 > slotSize_214 - 2 ? slotSize_214 - 2 : (readStart6_827 + samplePos6_848 < 0 ? 0 : readStart6_827 + samplePos6_848)));
             number peek_86 = 0;
             number peek_87 = 0;
-            auto result_850 = this->peek_default(this->gen_01_poolL_61, voiceIndex6_849, 0);
-            peek_87 = result_850[1];
-            peek_86 = result_850[0];
+            if (window6_842 != 0) {
+                auto result_850 = this->peek_default(this->gen_01_poolL_61, voiceIndex6_849, 0);
+                peek_87 = result_850[1];
+                peek_86 = result_850[0];
+            }
             number PanLeftGain_851 = 0;
 
             {
@@ -7064,12 +7142,14 @@ void gen_01_perform(
                 PanLeftGain_851 = (pan_852 > 0 ? 1 - pan_852 : 1);
             }
 
-            number voiceL6_853 = peek_86 * window6_842 * PanLeftGain_851;
+            voiceL6_853 = peek_86 * window6_842 * PanLeftGain_851;
             number peek_88 = 0;
             number peek_89 = 0;
-            auto result_854 = this->peek_default(this->gen_01_poolR_62, voiceIndex6_849, 0);
-            peek_89 = result_854[1];
-            peek_88 = result_854[0];
+            if (window6_842 != 0) {
+                auto result_854 = this->peek_default(this->gen_01_poolR_62, voiceIndex6_849, 0);
+                peek_89 = result_854[1];
+                peek_88 = result_854[0];
+            }
             number PanRightGain_855 = 0;
 
             {
@@ -7077,9 +7157,10 @@ void gen_01_perform(
                 PanRightGain_855 = (pan_856 < 0 ? 1 + pan_856 : 1);
             }
 
-            number voiceR6_857 = peek_88 * window6_842 * PanRightGain_855;
+            voiceR6_857 = peek_88 * window6_842 * PanRightGain_855;
             if (readPan6_828 < 0) voiceL6_853 = (voiceL6_853 + peek_88 * window6_842 * (-readPan6_828)) / (1 - readPan6_828);
             if (readPan6_828 > 0) voiceR6_857 = (voiceR6_857 + peek_86 * window6_842 * readPan6_828) / (1 + readPan6_828);
+            }
             __gen_01_voiceSlot6_134_value = ((bool)(resetNow_233) ? 0 : readSlot6_821);
             __gen_01_voicePos6_135_value = ((bool)(resetNow_233) ? 1048576 : readPos6_822 + active6_829);
             __gen_01_voiceBody6_136_value = readBody6_823;
@@ -7107,6 +7188,7 @@ void gen_01_perform(
                 auto position_868 = readPos7_859;
                 auto releaseSamples_873 = this->maximum(16, this->sr * 0.01);
                 number active_874 = (position_868 < bodySamples_869 + releaseSamples_873) * hasPool_872 * (level_871 > 0);
+                if (active_874) {
 
                 number attackPhase_875 = this->__wrapped_op_clamp(
                     (this->maximum(1, attackSamples_870) == 0. ? 0. : position_868 / this->maximum(1, attackSamples_870)),
@@ -7115,15 +7197,18 @@ void gen_01_perform(
                 );
 
                 number releasePhase_876 = (((releaseSamples_873 == 0. ? 0. : (bodySamples_869 + releaseSamples_873 - position_868) / releaseSamples_873)) > 1 ? 1 : (((releaseSamples_873 == 0. ? 0. : (bodySamples_869 + releaseSamples_873 - position_868) / releaseSamples_873)) < 0 ? 0 : (releaseSamples_873 == 0. ? 0. : (bodySamples_869 + releaseSamples_873 - position_868) / releaseSamples_873)));
-                number attackGain_877 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_875);
-                number releaseGain_878 = 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_876);
+                number attackGain_877 = attackPhase_875 <= 0 ? 0 : (attackPhase_875 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * attackPhase_875));
+                number releaseGain_878 = releasePhase_876 <= 0 ? 0 : (releasePhase_876 >= 1 ? 1 : 0.5 - 0.5 * rnbo_cos(3.14159265358979323846 * releasePhase_876));
                 GrainVoiceWindow_867 = active_874 * this->minimum(attackGain_877, releaseGain_878) * level_871;
+                }
             }
 
             number window7_879 = GrainVoiceWindow_867;
 #ifdef SCATTERLOOM_MPC_CAPTURE_GUARD
             window7_879 *= (mpcRecordingSlots & (1u << static_cast<unsigned>(readSlot7_858))) == 0;
 #endif
+            number voiceL7_890 = 0, voiceR7_894 = 0;
+            if (window7_879 != 0) {
             number GrainReadPosition_880 = 0;
 
             {
@@ -7138,9 +7223,11 @@ void gen_01_perform(
             number voiceIndex7_886 = readSlot7_858 * slotSize_214 + ((readStart7_864 + samplePos7_885 > slotSize_214 - 2 ? slotSize_214 - 2 : (readStart7_864 + samplePos7_885 < 0 ? 0 : readStart7_864 + samplePos7_885)));
             number peek_90 = 0;
             number peek_91 = 0;
-            auto result_887 = this->peek_default(this->gen_01_poolL_61, voiceIndex7_886, 0);
-            peek_91 = result_887[1];
-            peek_90 = result_887[0];
+            if (window7_879 != 0) {
+                auto result_887 = this->peek_default(this->gen_01_poolL_61, voiceIndex7_886, 0);
+                peek_91 = result_887[1];
+                peek_90 = result_887[0];
+            }
             number PanLeftGain_888 = 0;
 
             {
@@ -7148,12 +7235,14 @@ void gen_01_perform(
                 PanLeftGain_888 = (pan_889 > 0 ? 1 - pan_889 : 1);
             }
 
-            number voiceL7_890 = peek_90 * window7_879 * PanLeftGain_888;
+            voiceL7_890 = peek_90 * window7_879 * PanLeftGain_888;
             number peek_92 = 0;
             number peek_93 = 0;
-            auto result_891 = this->peek_default(this->gen_01_poolR_62, voiceIndex7_886, 0);
-            peek_93 = result_891[1];
-            peek_92 = result_891[0];
+            if (window7_879 != 0) {
+                auto result_891 = this->peek_default(this->gen_01_poolR_62, voiceIndex7_886, 0);
+                peek_93 = result_891[1];
+                peek_92 = result_891[0];
+            }
             number PanRightGain_892 = 0;
 
             {
@@ -7161,9 +7250,10 @@ void gen_01_perform(
                 PanRightGain_892 = (pan_893 < 0 ? 1 + pan_893 : 1);
             }
 
-            number voiceR7_894 = peek_92 * window7_879 * PanRightGain_892;
+            voiceR7_894 = peek_92 * window7_879 * PanRightGain_892;
             if (readPan7_865 < 0) voiceL7_890 = (voiceL7_890 + peek_92 * window7_879 * (-readPan7_865)) / (1 - readPan7_865);
             if (readPan7_865 > 0) voiceR7_894 = (voiceR7_894 + peek_90 * window7_879 * readPan7_865) / (1 + readPan7_865);
+            }
             __gen_01_voiceSlot7_140_value = ((bool)(resetNow_233) ? 0 : readSlot7_858);
             __gen_01_voicePos7_141_value = ((bool)(resetNow_233) ? 1048576 : readPos7_859 + active7_866);
             __gen_01_voiceBody7_142_value = readBody7_860;
@@ -7182,7 +7272,7 @@ void gen_01_perform(
             auto stealFadeSamples_901 = this->maximum(16, this->sr * 0.003);
             number stealActive_902 = (stealFadePos_900 < stealFadeSamples_901) * (stealStartGain_899 > 0);
             number stealPhase_903 = (((stealFadeSamples_901 == 0. ? 0. : stealFadePos_900 / stealFadeSamples_901)) > 1 ? 1 : (((stealFadeSamples_901 == 0. ? 0. : stealFadePos_900 / stealFadeSamples_901)) < 0 ? 0 : (stealFadeSamples_901 == 0. ? 0. : stealFadePos_900 / stealFadeSamples_901)));
-            number stealGain_904 = stealActive_902 * stealStartGain_899 * (0.5 + 0.5 * rnbo_cos(3.14159265358979323846 * stealPhase_903));
+            number stealGain_904 = stealActive_902 ? stealStartGain_899 * (0.5 + 0.5 * rnbo_cos(3.14159265358979323846 * stealPhase_903)) : 0;
 #ifdef SCATTERLOOM_MPC_CAPTURE_GUARD
             stealGain_904 *= (mpcRecordingSlots & (1u << static_cast<unsigned>(stealReadSlot_895))) == 0;
 #endif
@@ -7242,8 +7332,8 @@ void gen_01_perform(
             number oldReturnR_924 = this->gen_01_feedbackR_75_read(oldLoopDelay_918, 0);
             number newReturnL_925 = this->gen_01_feedbackL_74_read(newLoopDelay_919, 0);
             number newReturnR_926 = this->gen_01_feedbackR_75_read(newLoopDelay_919, 0);
-            number oldTapGain_927 = rnbo_cos(delayFadePhase_920 * 3.14159265358979323846 * 0.5);
-            number newTapGain_928 = rnbo_sin(delayFadePhase_920 * 3.14159265358979323846 * 0.5);
+            number oldTapGain_927 = delayFadePhase_920 == 1 ? fadeEndCos : rnbo_cos(delayFadePhase_920 * 3.14159265358979323846 * 0.5);
+            number newTapGain_928 = delayFadePhase_920 == 1 ? fadeEndSin : rnbo_sin(delayFadePhase_920 * 3.14159265358979323846 * 0.5);
             __gen_01_feedbackAge_197_value = ((bool)(resetNow_233) ? 0 : this->minimum(4194304, __gen_01_feedbackAge_197_value + 1));
             number feedbackPrimed_929 = __gen_01_feedbackAge_197_value >= this->maximum(oldLoopDelay_918, newLoopDelay_919);
             number returnL_930 = (oldReturnL_923 * oldTapGain_927 + newReturnL_925 * newTapGain_928) * feedbackPrimed_929;
