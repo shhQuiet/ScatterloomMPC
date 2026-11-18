@@ -135,7 +135,7 @@ inline void scatterloomApplyPendingPoolCommand(A&& writeAudio, B&& writeQueue, C
    const int copyCount=std::min(n,static_cast<int>(b.audioLeft[slot].size()));
    for(int i=0;i<copyCount;++i) {
     float l=restored->left[slot][i],r=restored->right[slot][i];
-    writeAudio(slot*262144+i,l,r); b.audioLeft[slot][i]=l; b.audioRight[slot][i]=r;
+    writeAudio(slot*(b.mirrorSampleRate <= 60000 ? 131072 : 262144)+i,l,r); b.audioLeft[slot][i]=l; b.audioRight[slot][i]=r;
    }
    b.valid[slot]=copyCount;b.complete[slot]=true;b.queue[pos]=slot;
    writeQueue(pos,slot);writeMetadata(slot,0,copyCount,1);

@@ -231,6 +231,16 @@ void prepareToProcess(number sampleRate, Index maxBlockSize, bool force) {
         this->invsr = 1 / sampleRate;
     }
 
+    if (sampleRateChanged) {
+        // Pool slot size grows at higher sample rates, before audio processing.
+        const Index poolSamples = (sampleRate <= 60000 ? 131072 : 262144) * 9;
+        if (this->gen_01_poolL_61->getSize() != poolSamples) {
+            this->gen_01_poolL_61->setSize(poolSamples);
+            this->gen_01_poolR_62->setSize(poolSamples);
+            updateDataRef(this, this->gen_01_poolL_61);
+            updateDataRef(this, this->gen_01_poolR_62);
+        }
+    }
     this->gen_01_dspsetup(forceDSPSetup);
     this->globaltransport_dspsetup(forceDSPSetup);
 
@@ -3924,9 +3934,9 @@ void allocateDataRefs() {
     this->gen_01_capturePositions_64->setSampleRate(this->sr);
     this->gen_01_grainQueue_63->requestSize(9, 1);
     this->gen_01_grainQueue_63->setSampleRate(this->sr);
-    this->gen_01_poolR_62->requestSize(2359296, 1);
+    this->gen_01_poolR_62->requestSize(1179648, 1);
     this->gen_01_poolR_62->setSampleRate(this->sr);
-    this->gen_01_poolL_61->requestSize(2359296, 1);
+    this->gen_01_poolL_61->requestSize(1179648, 1);
     this->gen_01_poolL_61->setSampleRate(this->sr);
     this->gen_01_markovMatrixB_70 = this->gen_01_markovMatrixB_70->allocateIfNeeded();
 
@@ -5585,7 +5595,7 @@ void gen_01_perform(
             number grainFb_209 = this->gen_01_slide_208_next(grainFeedback_28, 1200, 1200);
             number reverseProb_211 = this->gen_01_slide_210_next(reverseProbability_29, 1200, 1200);
             number wet_213 = this->gen_01_slide_212_next(mixAmount_27, 1200, 1200);
-            number slotSize_214 = 262144;
+            number slotSize_214 = this->sr <= 60000 ? 131072 : 262144;
             auto captureLength_215 = this->minimum(slotSize_214, this->sr * 2.05);
             auto defaultTrimEnd_216 = this->minimum(slotSize_214 - 2, this->sr * 2);
             number captureIsOn_217 = captureOn_19 >= 0.5;
@@ -9734,8 +9744,9 @@ void gen_01_feedbackR_75_dspsetup() {
 
 number gen_01_feedbackR_75_evaluateSizeExpr(number samplerate, number vectorsize) {
     RNBO_UNUSED(vectorsize);
-    RNBO_UNUSED(samplerate);
-    return 4194304;
+    // 8 beats at the supported 30 BPM minimum is 16 seconds. Keep the
+    // original capacity at higher rates where a smaller buffer is insufficient.
+    return samplerate > 0 && samplerate <= 65535 ? 1048576 : 4194304;
 }
 
 number gen_01_feedbackR_75_size() {
@@ -9838,8 +9849,9 @@ void gen_01_feedbackL_74_dspsetup() {
 
 number gen_01_feedbackL_74_evaluateSizeExpr(number samplerate, number vectorsize) {
     RNBO_UNUSED(vectorsize);
-    RNBO_UNUSED(samplerate);
-    return 4194304;
+    // 8 beats at the supported 30 BPM minimum is 16 seconds. Keep the
+    // original capacity at higher rates where a smaller buffer is insufficient.
+    return samplerate > 0 && samplerate <= 65535 ? 1048576 : 4194304;
 }
 
 number gen_01_feedbackL_74_size() {
