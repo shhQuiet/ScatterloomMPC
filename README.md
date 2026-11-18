@@ -26,7 +26,7 @@ The SDK used for the existing build was revision
 
 The command builds both MPC architectures and packages the checked-in skin
 in `mpc/build/Elsewave - VST - Scatterloom/`. The SDK may install its Zig
-compiler if needed. Both architectures and the native host simulator have been tested from this separate repository. A fresh-clone build has not yet been tested.
+compiler if needed. Both architectures and the native host simulator have been tested from a clean source snapshot of this repository.
 
 The `mpc/skins` files are generated output checked in for a portable build.
 After changes to the interface, regenerate them with `mpc/regenerate-skin.py`;
