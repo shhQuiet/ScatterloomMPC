@@ -8,6 +8,7 @@ out = root / 'mpc/build/Elsewave - VST - Scatterloom/Licenses'
 out.mkdir(parents=True, exist_ok=True)
 files = {
     'Elsewave-MIT.txt': 'LICENSE',
+    'GPL-3.0-only.txt': 'licenses/GPL-3.0-only.txt',
     'README-third-party.md': 'THIRD_PARTY_NOTICES.md',
     'RNBO-runtime-MIT.txt': 'generated/rnbo/rnbo/LICENSE',
     'inMusic-MPC-SDK-MIT.txt': 'licenses/MPC-Plugin-Builder-SDK.txt',

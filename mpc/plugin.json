@@ -13,5 +13,5 @@
   "description": "Scatterloom is a granular rhythm effect for MPC standalone.",
   "author": "Elsewave",
   "url": "",
-  "license": "See LICENSE and THIRD_PARTY_NOTICES.md"
+  "license": "MIT AND GPL-3.0-only"
 }

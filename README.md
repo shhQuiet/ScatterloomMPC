@@ -39,5 +39,7 @@ the Cycling '74 copyright and license notice when modifying it.
 ## License
 
 Elsewave-authored source is available under the MIT license in [LICENSE](LICENSE).
+The combined plugin is distributed under [GPL version 3](licenses/GPL-3.0-only.txt),
+using the GPL option for the Cycling 74-generated engine.
 Third-party code and artwork have their own licenses; see
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
