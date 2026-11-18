@@ -17,15 +17,8 @@
 extern "C" __attribute__((visibility("hidden"))) int scatterloom_mpc_bridge_abi_v4() noexcept;
 static_assert(ScatterloomStatusBridge::mpcBridgeAbi == 4,
               "The MPC wrapper must use the lightweight status bridge");
-// Temporary shutdown diagnostics: members are destroyed in reverse declaration order.
-struct ShutdownTrace {
- const char* message;
- ~ShutdownTrace() { std::fprintf(stderr, "Scatterloom: %s\n", message); }
-};
 class Scatterloom : public mpc::Plugin {
-ShutdownTrace afterCore {"engine destruction complete"};
 RNBO::CoreObject core;
-ShutdownTrace beforeCore {"beginning engine destruction"};
 float last[28];
 ScatterloomStatusBridge poolStatus;
 std::mutex poolStateMutex;
@@ -168,7 +161,7 @@ public:
 static std::vector<std::string> divisions() {
  return {"2 Bars", "1 Bar", "1/2", "1/2T", "1/4", "1/4T", "1/4.", "1/8", "1/8T", "1/8.", "1/16", "1/16T", "1/16.", "1/32"};
 }
-static mpc::PluginInfo info(){ mpc::PluginInfo i; i.name="Scatterloom"; i.vendor="Elsewave"; i.uniqueId=MPC_FOURCC('S','E','Z','Q'); i.version=200; /* 0.2.0.0 */ i.isInstrument=false; i.numInputs=2; i.numOutputs=2; return i; }
+static mpc::PluginInfo info(){ mpc::PluginInfo i; i.name="Scatterloom"; i.vendor="Elsewave"; i.uniqueId=MPC_FOURCC('S','E','Z','Q'); i.version=1000; /* 1.0.0.0 */ i.isInstrument=false; i.numInputs=2; i.numOutputs=2; return i; }
 Scatterloom():mpc::Plugin(info()) {
 // Force a link-time dependency on the guarded MPC RNBO translation unit.
 (void) scatterloom_mpc_bridge_abi_v4();
@@ -255,10 +248,8 @@ bool formatValue(int index, float value, std::string& out) override {
  out = text; return true;
 }
 ~Scatterloom() override {
- std::fprintf(stderr, "Scatterloom: closing; stopping display notifier\n");
  stopWaveNotifier.store(true, std::memory_order_release);
  if (waveNotifier.joinable()) waveNotifier.join();
- std::fprintf(stderr, "Scatterloom: display notifier stopped\n");
 }
 void prepare(double sr,int block) override {
  lastDetectionSequence = poolStatus.detectionSequence.load(std::memory_order_relaxed);
@@ -281,7 +272,6 @@ void prepare(double sr,int block) override {
 // Versioned project grain data; project saving may pause processing while the
 // snapshot is copied. The host calls these methods outside the audio callback.
 void saveExtraState(std::vector<uint8_t>& out) override {
- std::fprintf(stderr, "Scatterloom: saving grain state\n");
  std::lock_guard<std::mutex> lock(poolStateMutex);
  auto put32=[&](uint32_t v) {for(int j=0;j<4;++j) out.push_back(static_cast<uint8_t>(v>>(8*j)));};
  out.insert(out.end(), {'S','L','P','2'});
@@ -301,7 +291,6 @@ void saveExtraState(std::vector<uint8_t>& out) override {
   }
  }
  for (int i=0;i<81;++i) { float value=get(125+i); uint32_t bits; std::memcpy(&bits,&value,4); put32(bits); }
- std::fprintf(stderr, "Scatterloom: grain state saved\n");
 }
 void loadExtraState(const uint8_t* data, size_t size) override {
  if (!data || size<12) return;
