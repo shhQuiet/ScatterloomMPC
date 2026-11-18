@@ -37,7 +37,7 @@ std::atomic<bool> removeNewestRequested {false};
 int removeNewestPhase = 0;
 unsigned removeNewestBaseline = 0;
 // Host waveform notifications must not block the real-time audio thread.
-static constexpr int firstWaveParam = 28, waveParamCount = 129;
+static constexpr int firstWaveParam = 28, waveParamCount = 65;
 std::array<std::atomic<bool>, waveParamCount> pendingWave {};
 std::atomic<bool> stopWaveNotifier {false};
 std::atomic<bool> pulsesNotificationPending {false};
@@ -64,7 +64,7 @@ int poolAnimationPosition = 0;
 int poolAnimationLed = -1;
 std::thread waveNotifier;
 void runWaveNotifier() {
- int ringCursor = 0, playheadCursor = 0, sharedCursor = 0;
+ int ringCursor = 0, sharedCursor = 0;
  auto nextSensitivityUpdate = std::chrono::steady_clock::now();
  auto nextMatrixUpdate = nextSensitivityUpdate;
  while (!stopWaveNotifier.load(std::memory_order_acquire)) {
@@ -85,71 +85,63 @@ void runWaveNotifier() {
   if (now >= nextMatrixUpdate) {
    nextMatrixUpdate = now + std::chrono::milliseconds(100);
    std::lock_guard<std::recursive_mutex> lock(markovEditMutex);
-   MarkovMatrix m; for(int i=0;i<81;++i) m.values[i]=get(189+i);
+   MarkovMatrix m; for(int i=0;i<81;++i) m.values[i]=get(125+i);
    const int active=std::max(0,std::min(getInt(5),poolStatus.poolCount.load(std::memory_order_relaxed)));
    for(int row=0;row<9;++row) {
     const auto values=m.effectiveRow(row,active);
     for(int col=0;col<9;++col) { const int i=row*9+col;
-     if(std::abs(get(369+i)-values[col])>0.00001f) {set(369+i,values[col]);effectivePending[i].store(true,std::memory_order_release);}
+     if(std::abs(get(305+i)-values[col])>0.00001f) {set(305+i,values[col]);effectivePending[i].store(true,std::memory_order_release);}
     }
    }
-   const int selectedRow=std::clamp(getInt(351)-1,0,8), selectedCol=std::clamp(getInt(352)-1,0,8);
+   const int selectedRow=std::clamp(getInt(287)-1,0,8), selectedCol=std::clamp(getInt(288)-1,0,8);
    const float selected=m.effectiveRow(selectedRow,active)[selectedCol];
-   if(std::abs(get(353)-selected)>0.00001f) {
-    markovUpdating=true; set(353,selected); markovUpdating=false;
-    markovPending[353-189].store(true,std::memory_order_release);
+   if(std::abs(get(289)-selected)>0.00001f) {
+    markovUpdating=true; set(289,selected); markovUpdating=false;
+    markovPending[289-125].store(true,std::memory_order_release);
    }
   }
   bool sent = false;
-  for(int i=0;i<81 && !sent;++i) if(effectivePending[i].exchange(false,std::memory_order_acq_rel)) {notifyHostParameterChanged(369+i);sent=true;}
+  for(int i=0;i<81 && !sent;++i) if(effectivePending[i].exchange(false,std::memory_order_acq_rel)) {notifyHostParameterChanged(305+i);sent=true;}
   for (int scanned=0;scanned<kRhythmPositionCount && !sent;++scanned) {
    const int i=sharedCursor; sharedCursor=(sharedCursor+1)%kRhythmPositionCount;
-   if(sharedRhythmPending[i].exchange(false,std::memory_order_acq_rel)) {notifyHostParameterChanged(450+i);sent=true;}
+   if(sharedRhythmPending[i].exchange(false,std::memory_order_acq_rel)) {notifyHostParameterChanged(386+i);sent=true;}
   }
   int refreshCount = markovPresetRefresh.exchange(0,std::memory_order_acq_rel);
   if (refreshCount>0) {
    std::lock_guard<std::recursive_mutex> lock(markovEditMutex);
    int active=std::max(1,std::min(getInt(5),poolStatus.poolCount.load(std::memory_order_relaxed)));
-   int preset=getInt(356);
-   if (preset>0 && active==refreshCount && active!=markovPresetCount.load(std::memory_order_relaxed)) set(356,float(preset));
+   int preset=getInt(292);
+   if (preset>0 && active==refreshCount && active!=markovPresetCount.load(std::memory_order_relaxed)) set(292,float(preset));
   }
   if (rotationNotificationPending.exchange(false,std::memory_order_acq_rel)) {
    notifyHostParameterChanged(8); sent = true;
   }
   if (grainGlowNotificationPending.exchange(false,std::memory_order_acq_rel)) {
-   notifyHostParameterChanged(368); sent = true;
+   notifyHostParameterChanged(304); sent = true;
   }
   if (transitionNotificationPending.exchange(false,std::memory_order_acq_rel)) {
-   notifyHostParameterChanged(357); sent = true;
+   notifyHostParameterChanged(293); sent = true;
   }
   if (detectionNotificationPending.exchange(false, std::memory_order_acq_rel)) {
-   notifyHostParameterChanged(188); sent = true;
+   notifyHostParameterChanged(124); sent = true;
   }
   if (poolAnimationNotificationPending.exchange(false, std::memory_order_acq_rel)) {
-   notifyHostParameterChanged(186); sent = true;
+   notifyHostParameterChanged(122); sent = true;
   }
   if (!sent && pulsesNotificationPending.exchange(false, std::memory_order_acq_rel)) {
    notifyHostParameterChanged(7); sent = true;
   }
   for (int n=0; n<168 && !sent; ++n) if (markovPending[n].exchange(false,std::memory_order_acq_rel)) {
-   notifyHostParameterChanged(189+n); sent = true;
-  }
-  // Keep the two changing playhead lights ahead of static artwork updates.
-  for (int scanned = 0; scanned < 32 && !sent; ++scanned) {
-   int n = 61-firstWaveParam + playheadCursor;
-   playheadCursor = (playheadCursor + 1) % 32;
-   if (pendingWave[n].exchange(false, std::memory_order_acq_rel)) {
-    notifyHostParameterChanged(firstWaveParam + n); sent = true;
-   }
+   notifyHostParameterChanged(125+n); sent = true;
   }
   // Pan sliders and latching mode buttons also update off the audio thread.
   for (int n=0; n<13 && !sent; ++n) if (pendingStereo[n].exchange(false,std::memory_order_acq_rel)) {
-   notifyHostParameterChanged(n < 9 ? 15+n : 157+n-9); sent = true;
+   notifyHostParameterChanged(n < 9 ? 15+n : 93+n-9); sent = true;
   }
   // A rhythm change should not wait behind a long waveform refresh.
-  for (int scanned = 0; scanned < 129 && !sent; ++scanned) {
+  for (int scanned = 0; scanned < 65 && !sent; ++scanned) {
    int n = 28-firstWaveParam + ringCursor;
-   ringCursor = (ringCursor + 1) % 129;
+   ringCursor = (ringCursor + 1) % 65;
    if (pendingWave[n].exchange(false, std::memory_order_acq_rel)) {
     notifyHostParameterChanged(firstWaveParam + n); sent = true;
    }
@@ -209,15 +201,7 @@ addParam(mpc::choiceParam("loopDivision", "Loop Time", divisions(), 4));
 addParam(mpc::floatParam("timingOffset","Grain Start",-0.2f,0.2f,0.0f));
 { auto status = mpc::intParam("poolCount", "", 0, 9, 0); status.automatable = false; addParam(status); }
 // Read-only indicators appended after existing parameters to preserve indices.
-for (int i=0; i<32; ++i) {
- auto p = mpc::boolParam(("rhythmStep"+std::to_string(i)).c_str(), "", false);
- p.automatable=false; addParam(p);
-}
 { auto p=mpc::floatParam("rhythmArc", "", 0, 1, 0); p.automatable=false; addParam(p); }
-for (int i=0; i<32; ++i) {
- auto p=mpc::boolParam(("playhead"+std::to_string(i)).c_str(), "", false);
- p.automatable=false; addParam(p);
-}
 for (int i=0; i<64; ++i) {
  auto p=mpc::floatParam(("rhythmSector"+std::to_string(i)).c_str(), "", 0, 1, 0);
  p.automatable=false; addParam(p);
@@ -232,7 +216,7 @@ addParam(mpc::boolParam("playEnabled", "Play", true));
 { auto p=mpc::intParam("reserved163", "", 0, 5, 0); p.automatable=false; addParam(p); }
 { auto p=mpc::intParam("reserved164", "", 0, 1224, 0); p.automatable=false; addParam(p); }
 { auto p=mpc::intParam("reserved165", "", 0, 42874, 0); p.automatable=false; addParam(p); }
-for (int i=166; i<=185; ++i) { auto id=std::string("reserved")+std::to_string(i); auto p=mpc::boolParam(id.c_str(), "", false); p.automatable=false; addParam(p); }
+for (int i=102; i<=121; ++i) { auto id=std::string("reserved")+std::to_string(i); auto p=mpc::boolParam(id.c_str(), "", false); p.automatable=false; addParam(p); }
 { auto p=mpc::intParam("poolAnimation", "", 0, 9, 0); p.automatable=false; addParam(p); }
 { auto p=mpc::boolParam("removeNewest", "", false); p.automatable=false; addParam(p); }
 { auto p=mpc::boolParam("detectionFlash", "", false); p.automatable=false; addParam(p); }
@@ -264,7 +248,7 @@ bool formatValue(int index, float value, std::string& out) override {
   case 3: std::snprintf(text,sizeof(text),"%.0f ms",(0.02f + 1.98f * value * value) * 1000.0f); break;
   case 4: std::snprintf(text,sizeof(text),"%.0f ms",value * 1000.0f); break;
   case 26: std::snprintf(text,sizeof(text),"%+.0f ms",value * 1000.0f); break;
-  case 353: case 0: case 9: case 10: case 11:
+  case 289: case 0: case 9: case 10: case 11:
    std::snprintf(text,sizeof(text),"%.0f%%",value * 100.0f); break;
   default: return false;
  }
@@ -278,10 +262,10 @@ bool formatValue(int index, float value, std::string& out) override {
 }
 void prepare(double sr,int block) override {
  lastDetectionSequence = poolStatus.detectionSequence.load(std::memory_order_relaxed);
- detectionFlashSamples = 0; set(188, 0.0f); detectionNotificationPending.store(true, std::memory_order_release);
+ detectionFlashSamples = 0; set(124, 0.0f); detectionNotificationPending.store(true, std::memory_order_release);
  poolAnimationFrame = 0; poolAnimationPosition = 0; poolAnimationLed = -1;
  lastCaptureSequence = poolStatus.captureSequence.load(std::memory_order_relaxed);
- set(186, 0.0f); poolAnimationNotificationPending.store(true, std::memory_order_release);
+ set(122, 0.0f); poolAnimationNotificationPending.store(true, std::memory_order_release);
  for (auto& channel : dryInput) channel.resize(std::max(block, 8192));
  for (auto& channel : auditionBuffer) channel.resize(std::max(block, 8192));
  poolAudition.reset(); pendingAudition.store(0,std::memory_order_relaxed);
@@ -316,7 +300,7 @@ void saveExtraState(std::vector<uint8_t>& out) override {
    uint32_t bits;std::memcpy(&bits,&sample,sizeof(bits));put32(bits);
   }
  }
- for (int i=0;i<81;++i) { float value=get(189+i); uint32_t bits; std::memcpy(&bits,&value,4); put32(bits); }
+ for (int i=0;i<81;++i) { float value=get(125+i); uint32_t bits; std::memcpy(&bits,&value,4); put32(bits); }
  std::fprintf(stderr, "Scatterloom: grain state saved\n");
 }
 void loadExtraState(const uint8_t* data, size_t size) override {
@@ -353,12 +337,12 @@ void loadExtraState(const uint8_t* data, size_t size) override {
  if(restored->sampleRate != poolStatus.mirrorSampleRate) return;
  // Older project states do not have the separate manual base parameter.
  if (!rotationBaseRestoreSeen.exchange(false,std::memory_order_acq_rel)) {
-  rotationUpdating=true; set(367,get(8)); rotationUpdating=false;
+  rotationUpdating=true; set(303,get(8)); rotationUpdating=false;
  }
  rotationUpdating=true; setNormalised(8,lastRotationNormalized.load(std::memory_order_acquire)); rotationUpdating=false;
  if (hasMatrix) {
   markovUpdating=true;
-  for (int i=0;i<81;++i) { set(189+i,matrix[i]); markovPending[i].store(true,std::memory_order_release); }
+  for (int i=0;i<81;++i) { set(125+i,matrix[i]); markovPending[i].store(true,std::memory_order_release); }
   markovUpdating=false;
  }
  poolStatus.pendingRestore=std::move(restored);
@@ -366,56 +350,56 @@ void loadExtraState(const uint8_t* data, size_t size) override {
 // Latch momentary touches even when press and release both occur between
 // audio blocks. The audio thread consumes each pending action once.
 void parameterChanged(int index, float value) override {
- if (!rotationUpdating && index==367) rotationBaseRestoreSeen.store(true,std::memory_order_release);
+ if (!rotationUpdating && index==303) rotationBaseRestoreSeen.store(true,std::memory_order_release);
  if (!rotationUpdating && index==8) {
   lastRotationNormalized.store(getNormalised(8),std::memory_order_release);
   int target=static_cast<int>(std::lround(value));
   int base=target;
-  if (getInt(14)>0) base=scatterloomRotationBaseForTarget(getInt(367),
+  if (getInt(14)>0) base=scatterloomRotationBaseForTarget(getInt(303),
     poolStatus.effectiveRotation.load(std::memory_order_relaxed), target, getInt(6));
-  rotationUpdating=true; set(367,float(base)); rotationUpdating=false;
+  rotationUpdating=true; set(303,float(base)); rotationUpdating=false;
  }
  if (!rotationUpdating && index==14 && value<0.5f) {
-  rotationUpdating=true; set(8,get(367)); rotationUpdating=false;
+  rotationUpdating=true; set(8,get(303)); rotationUpdating=false;
   rotationNotificationPending.store(true,std::memory_order_release);
  }
- if (index>=358 && index<=366 && value>0.5f) pendingAudition.fetch_or(1u<<(index-358),std::memory_order_release);
- if (!markovUpdating && index >= 270 && index <= 356) {
+ if (index>=294 && index<=302 && value>0.5f) pendingAudition.fetch_or(1u<<(index-294),std::memory_order_release);
+ if (!markovUpdating && index >= 206 && index <= 292) {
   std::lock_guard<std::recursive_mutex> lock(markovEditMutex);
   markovUpdating = true;
-  auto update = [this](int i, float v) { set(i,v); if(i>=189 && i<=356) markovPending[i-189].store(true,std::memory_order_release); };
-  int row=std::clamp(getInt(351)-1,0,8), col=std::clamp(getInt(352)-1,0,8);
-  auto effectiveValue = [this](int r,int c) { MarkovMatrix m; for(int i=0;i<81;++i)m.values[i]=get(189+i); int active=std::max(0,std::min(getInt(5),poolStatus.poolCount.load(std::memory_order_relaxed))); return m.effectiveRow(r,active)[c]; };
-  if (index>=270 && index<=350 && value>0.5f) {
-   int cell=index-270; row=cell/9; col=cell%9;
-   update(351,float(row+1)); update(352,float(col+1)); update(353,effectiveValue(row,col));
-  } else if (index==351 || index==352) {
-   update(353,effectiveValue(row,col));
-  } else if (index==353) {
-   MarkovMatrix m; for(int i=0;i<81;++i)m.values[i]=get(189+i);
+  auto update = [this](int i, float v) { set(i,v); if(i>=125 && i<=292) markovPending[i-125].store(true,std::memory_order_release); };
+  int row=std::clamp(getInt(287)-1,0,8), col=std::clamp(getInt(288)-1,0,8);
+  auto effectiveValue = [this](int r,int c) { MarkovMatrix m; for(int i=0;i<81;++i)m.values[i]=get(125+i); int active=std::max(0,std::min(getInt(5),poolStatus.poolCount.load(std::memory_order_relaxed))); return m.effectiveRow(r,active)[c]; };
+  if (index>=206 && index<=286 && value>0.5f) {
+   int cell=index-206; row=cell/9; col=cell%9;
+   update(287,float(row+1)); update(288,float(col+1)); update(289,effectiveValue(row,col));
+  } else if (index==287 || index==288) {
+   update(289,effectiveValue(row,col));
+  } else if (index==289) {
+   MarkovMatrix m; for(int i=0;i<81;++i)m.values[i]=get(125+i);
    int active=std::max(0,std::min(getInt(5),poolStatus.poolCount.load(std::memory_order_relaxed)));
    m.setEffectiveProbability(row,col,active,value);
-   for(int c=0;c<9;++c) update(189+row*9+c,m.values[row*9+c]);
-   update(353,m.effectiveRow(row,active)[col]);
-   update(356,0.0f);
-  } else if (((index==354 || index==355) && value>0.5f) || (index==356 && value>=0.5f)) {
-   MarkovMatrix m; const int preset = index==354 ? 1 : (index==355 ? 2 : int(value)); int active=std::max(1,std::min(getInt(5),poolStatus.poolCount.load(std::memory_order_relaxed)));
+   for(int c=0;c<9;++c) update(125+row*9+c,m.values[row*9+c]);
+   update(289,m.effectiveRow(row,active)[col]);
+   update(292,0.0f);
+  } else if (((index==290 || index==291) && value>0.5f) || (index==292 && value>=0.5f)) {
+   MarkovMatrix m; const int preset = index==290 ? 1 : (index==291 ? 2 : int(value)); int active=std::max(1,std::min(getInt(5),poolStatus.poolCount.load(std::memory_order_relaxed)));
    m.preset(preset,active); markovPresetCount.store(active,std::memory_order_relaxed);
-   for(int i=0;i<81;++i)update(189+i,m.values[i]);
-   update(353,m.values[row*9+col]);
+   for(int i=0;i<81;++i)update(125+i,m.values[i]);
+   update(289,m.values[row*9+col]);
   }
   markovUpdating = false;
  }
 
- if (index == 187 && value > 0.5f) removeNewestRequested.store(true, std::memory_order_release);
+ if (index == 123 && value > 0.5f) removeNewestRequested.store(true, std::memory_order_release);
  if ((index == 6 || index == 7) && getInt(7) > getInt(6)) {
   set(7, static_cast<float>(getInt(6)));
   pulsesNotificationPending.store(true, std::memory_order_release);
  }
  // Display values are derived state: restore them after any host write.
- if (index >= 28 && index <= 156) ringDirty.store(true, std::memory_order_relaxed);
+ if (index >= 28 && index <= 92) ringDirty.store(true, std::memory_order_relaxed);
  if (value > 0.5f) {
-  if (index >= 157 && index <= 160) requestedStereoMode.store(index - 156, std::memory_order_relaxed);
+  if (index >= 93 && index <= 96) requestedStereoMode.store(index - 92, std::memory_order_relaxed);
   if (index == 12) clearRequested.store(true, std::memory_order_relaxed);
  }
 }
@@ -434,10 +418,10 @@ void process(mpc::ProcessContext& c) override {
 // Latching modes operate on pool order; manual mode retains slider values.
 int modeRequest = requestedStereoMode.exchange(0, std::memory_order_relaxed);
 if (modeRequest > 0) for (int i=0; i<4; ++i) {
- if (i != modeRequest-1 && getBool(157+i)) {set(157+i,0);pendingStereo[9+i].store(true,std::memory_order_release);}
+ if (i != modeRequest-1 && getBool(93+i)) {set(93+i,0);pendingStereo[9+i].store(true,std::memory_order_release);}
 }
 int stereoMode = 0;
-for (int i=0; i<4; ++i) if (getBool(157+i)) stereoMode=i+1;
+for (int i=0; i<4; ++i) if (getBool(93+i)) stereoMode=i+1;
 const int stereoCount = std::max(0,std::min(9,poolStatus.poolCount.load(std::memory_order_relaxed)));
 if (stereoMode != 0) {
  for (int i=0; i<stereoCount; ++i) {
@@ -465,7 +449,7 @@ for (int row=0;row<stereoCount;++row) {
 }
 for(int n=0;n<28;n++){
  float v;
- if(n == 8) v=get(367);
+ if(n == 8) v=get(303);
  else if(n == 13) {
   // Always release Clear for a block between presses so the engine sees an edge.
   v = last[n] == 1.0f ? 0.0f : (clearRequested.exchange(false, std::memory_order_relaxed) ? 1.0f : 0.0f);
@@ -497,7 +481,7 @@ if (removeNewestPhase != 0) {
 const bool canPassThrough = c.numFrames <= static_cast<int>(dryInput[0].size());
 if (canPassThrough) for (int ch=0; ch<2; ++ch)
  for (int n=0; n<c.numFrames; ++n) dryInput[ch][n] = c.inputs[ch][n];
-const bool scatterloomPlaying = c.transport.playing && getBool(162);
+const bool scatterloomPlaying = c.transport.playing && getBool(98);
 auto t=core.getCurrentTime();
 if(c.transport.tempoValid) core.scheduleEvent(RNBO::TempoEvent(t,c.transport.bpm));
 if(c.transport.ppqValid) core.scheduleEvent(RNBO::BeatTimeEvent(t,c.transport.ppqPos));
@@ -506,7 +490,7 @@ core.scheduleEvent(RNBO::TransportEvent(t,scatterloomPlaying ? RNBO::TransportSt
  // Suppress waveform notifications while the engine is recording grains.
  poolStatus.recordingThisBlock = false;
  std::lock_guard<std::mutex> lock(poolStateMutex);
- for (int i=0; i<81; ++i) poolStatus.markov.values[i] = get(189+i);
+ for (int i=0; i<81; ++i) poolStatus.markov.values[i] = get(125+i);
  ScatterloomScopedStatusBridge scope(poolStatus);
  core.process(c.inputs,2,c.outputs,2,c.numFrames);
  if (c.numFrames<=static_cast<int>(auditionBuffer[0].size())) {
@@ -538,11 +522,11 @@ if (!scatterloomPlaying || glowPoolCount <= 0 || grainGlowIndex > glowPoolCount)
 const int glowDuration = std::max(1, int(c.sampleRate * 0.2));
 const int glowLevel = grainGlowSamples > 0 ? std::min(5, 1 + (grainGlowSamples - 1) * 5 / glowDuration) : 0;
 const int glowValue = glowLevel && grainGlowIndex >= 1 && grainGlowIndex <= 9 ? 1 + (grainGlowIndex-1)*5 + (glowLevel-1) : 0;
-if (getInt(368) != glowValue) { set(368, float(glowValue)); grainGlowNotificationPending.store(true,std::memory_order_release); }
+if (getInt(304) != glowValue) { set(304, float(glowValue)); grainGlowNotificationPending.store(true,std::memory_order_release); }
 grainGlowSamples = std::max(0, grainGlowSamples - c.numFrames);
 if (!scatterloomPlaying) poolStatus.nextTransition.store(0,std::memory_order_relaxed);
 const int transition=poolStatus.nextTransition.load(std::memory_order_relaxed);
-if (getInt(357)!=transition) {set(357,float(transition)); transitionNotificationPending.store(true,std::memory_order_release);}
+if (getInt(293)!=transition) {set(293,float(transition)); transitionNotificationPending.store(true,std::memory_order_release);}
 // Refresh only when the rhythm changes, not on every audio block.
 if (c.transport.tempoValid && std::isfinite(c.transport.bpm) && c.transport.bpm > 0.0)
  lastValidTempo = c.transport.bpm;
@@ -556,11 +540,6 @@ if (getInt(14)>0 && getInt(8)!=ringRotation) {
 const bool displayDirty = ringDirty.exchange(false, std::memory_order_relaxed);
 const bool sharedStructureChanged = displayDirty || ringSteps != lastRingSteps || ringPulses != lastRingPulses || ringRotation != lastRingRotation;
 if (sharedStructureChanged) {
- for (int i=0;i<32;++i) {
-  const float active = (i < ringSteps && (((i + ringRotation) % ringSteps) * ringPulses) % ringSteps < ringPulses) ? 1.0f : 0.0f;
-  const int index = 28 + i;
-  if (get(index) != active) { set(index,active); pendingWave[index-firstWaveParam].store(true,std::memory_order_release); }
- }
  lastRingSteps=ringSteps; lastRingPulses=ringPulses; lastRingRotation=ringRotation;
 }
 // The engine reports rotated step numbers. Convert them to ring positions.
@@ -568,21 +547,15 @@ const int currentStep = scatterloomPlaying ? poolStatus.playingStep.load(std::me
 const int visibleStep = currentStep >= 0 ? (currentStep - ringRotation + ringSteps) % ringSteps : -1;
 const int previousVisibleStep = lastVisibleStep;
 const bool sharedPlayheadChanged = displayDirty || visibleStep != lastVisibleStep;
-if (displayDirty || visibleStep != lastVisibleStep) {
- for (int i=0; i<32; ++i) {
-  const int index=61+i; const float active = i == visibleStep ? 1.0f : 0.0f;
-  if (get(index) != active) { set(index, active); pendingWave[index-firstWaveParam].store(true,std::memory_order_release); }
- }
- lastVisibleStep = visibleStep;
-}
+if (sharedPlayheadChanged) lastVisibleStep = visibleStep;
 if (sharedStructureChanged) {
  std::array<int,kRhythmPositionCount> state {};
  for(int i=0;i<ringSteps;++i) {
   const int active=(((i+ringRotation)%ringSteps)*ringPulses)%ringSteps < ringPulses;
   state[kRhythmPositionMap[ringSteps-1][i]]=1+active+(i==visibleStep ? 2 : 0);
  }
- for(int i=0;i<kRhythmPositionCount;++i) if(getNormalised(450+i)!=0.25f*state[i]) {
-  set(450+i,float(state[i])); sharedRhythmPending[i].store(true,std::memory_order_release);
+ for(int i=0;i<kRhythmPositionCount;++i) if(getNormalised(386+i)!=0.25f*state[i]) {
+  set(386+i,float(state[i])); sharedRhythmPending[i].store(true,std::memory_order_release);
  }
 } else if (sharedPlayheadChanged) {
  for(int step : {previousVisibleStep, visibleStep}) {
@@ -590,8 +563,8 @@ if (sharedStructureChanged) {
   const int position=kRhythmPositionMap[ringSteps-1][step];
   const int active=(((step+ringRotation)%ringSteps)*ringPulses)%ringSteps < ringPulses;
   const int state=1+active+(step==visibleStep ? 2 : 0);
-  if(getNormalised(450+position)!=0.25f*state) {
-   set(450+position,float(state)); sharedRhythmPending[position].store(true,std::memory_order_release);
+  if(getNormalised(386+position)!=0.25f*state) {
+   set(386+position,float(state)); sharedRhythmPending[position].store(true,std::memory_order_release);
   }
  }
 }
@@ -602,9 +575,9 @@ const double grain = get(3);
 const double grainSeconds = 0.02 + 1.98 * grain * grain;
 const float fullArcFraction = static_cast<float>(grainSeconds * lastValidTempo * rates[rateIndex] / (60.0 * ringSteps));
 const float arcFraction = std::min(1.0f, fullArcFraction);
-if (std::abs(get(60) - arcFraction) >= 1.0f/1024.0f) {
- set(60, arcFraction);
- pendingWave[60-firstWaveParam].store(true,std::memory_order_release);
+if (std::abs(get(28) - arcFraction) >= 1.0f/1024.0f) {
+ set(28, arcFraction);
+ pendingWave[28-firstWaveParam].store(true,std::memory_order_release);
 }
 // The ring uses 64 short image segments. Only recalculate when its pattern
 // or the duration relative to the cycle changes; never generate artwork in audio.
@@ -637,14 +610,14 @@ if (displayDirty || lastSectorSteps != ringSteps || lastSectorPulses != ringPuls
   }
   const int ribbonLevel = (ribbon * 3 + 3) / 7;
   const float value=static_cast<float>(std::min(grains,5)+6*ribbonLevel)/23.0f;
-  const int index=93+segment;
+  const int index=29+segment;
   if (get(index)!=value) {set(index,value);pendingWave[index-firstWaveParam].store(true,std::memory_order_release);}
  }
  lastSectorSteps=ringSteps;lastSectorPulses=ringPulses;lastSectorRotation=ringRotation;lastSectorFraction=fullArcFraction;
 }
 const int poolCount = poolStatus.poolCount.load(std::memory_order_relaxed);
 const int presetActive = std::max(1,std::min(getInt(5),poolCount));
-if (getInt(356)>0 && presetActive!=markovPresetCount.load(std::memory_order_relaxed))
+if (getInt(292)>0 && presetActive!=markovPresetCount.load(std::memory_order_relaxed))
  markovPresetRefresh.store(presetActive,std::memory_order_release);
 const unsigned detectionSequence = poolStatus.detectionSequence.load(std::memory_order_relaxed);
 if (detectionSequence != lastDetectionSequence) {
@@ -652,8 +625,8 @@ if (detectionSequence != lastDetectionSequence) {
  detectionFlashSamples = std::max(1, static_cast<int>(c.sampleRate * 0.15));
 } else detectionFlashSamples = std::max(0, detectionFlashSamples - c.numFrames);
 const bool detectionLit = detectionFlashSamples > 0;
-if (getBool(188) != detectionLit) {
- set(188, detectionLit ? 1.0f : 0.0f);
+if (getBool(124) != detectionLit) {
+ set(124, detectionLit ? 1.0f : 0.0f);
  detectionNotificationPending.store(true, std::memory_order_release);
 }
 const unsigned captureSequence = poolStatus.captureSequence.load(std::memory_order_relaxed);
@@ -670,7 +643,7 @@ if (poolAnimationFrame > 0) {
  const int total = poolAnimationLed < 0 ? 9 : 3;
  const int led = poolAnimationPosition >= total ? 0 :
    (poolAnimationLed < 0 ? 9 - poolAnimationPosition : (poolAnimationPosition % 2 == 0 ? poolAnimationLed + 1 : 0));
- if (getInt(186) != led) { set(186, static_cast<float>(led)); poolAnimationNotificationPending.store(true, std::memory_order_release); }
+ if (getInt(122) != led) { set(122, static_cast<float>(led)); poolAnimationNotificationPending.store(true, std::memory_order_release); }
  if (poolAnimationPosition >= total) poolAnimationFrame = 0;
 }
 if (poolCount != lastReportedPoolCount || getInt(27) != poolCount) {
@@ -702,7 +675,7 @@ static void stereoSetParameter(AEffect* effect, VstInt32 index, float value) {
  if (index == 0 && plugin->getBool(1)) return;
  if (index >= 15 && index <= 23) {
   if (index-15 >= plugin->getInt(27)) return;
-  for (int i=157; i<=160; ++i) if (plugin->getBool(i)) return;
+  for (int i=93; i<=96; ++i) if (plugin->getBool(i)) return;
  }
  mpc::detail::setParameter(effect,index,value);
 }

@@ -74,6 +74,6 @@ def update_qlinks(path):
         if entry.get('Tab') == 4:
             entry['Bank Direction'] = 'RowTopDown'
             entry['Q-Links'] = {'Q-Link %d' % i: -1 for i in range(1,17)}
-            for index, parameter in {13:0,14:4,15:9,16:161,9:1,10:26,11:25,12:14}.items():
+            for index, parameter in {13:0,14:4,15:9,16:97,9:1,10:26,11:25,12:14}.items():
                 entry['Q-Links']['Q-Link %d' % index] = parameter
     path.write_text(json.dumps(obj, indent=2)+'\n')

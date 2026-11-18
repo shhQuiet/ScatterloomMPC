@@ -115,7 +115,7 @@ markov_start = raw.index('"tabName": "MARKOV"')
 markov_end = raw.index('"qlinkBoundsData"', markov_start)
 section = raw[markov_start:markov_end]
 pos = section.index('"componentsData": [') + len('"componentsData": [')
-for index in (354,355):
+for index in (290,291):
  section=section.replace('"value": "Parameter %d"'%index, '"value": "ResetOnGestureEnd/Parameter %d"'%index)
 entries = [{'version':2,'componentData':{'version':1,'name':'Matrix labels','type':'Image',
  'data':{'version':2,'imageType':'Regular','colour':'0','image':'markov-labels.png'}},
@@ -146,20 +146,20 @@ for row in range(9):
   def bounds(): return {'version':1,'acceptsHWFocus':'No','showWhenDataModelInvalid':'Hide','whenVisible':'Always','boundsType':'Absolute','bounds':box}
   entries.append({'version':2,'componentData':{'version':1,'name':'Probability %d %d'%(row+1,col+1),'type':'Image',
    'data':{'version':2,'imageType':'FilmStrip','colour':'0','image':'markov-bar-strip.png','numFrames':101,'handleName':'Data'}},
-   'handle remapping':{'version':1,'map':[{'key':'Data','value':'Parameter %d'%(369+cell)}]},'bounds':bounds()})
-  playing=bounds(); playing['version']=2; playing['additionalInvalidatingHandles']=['IndexedEnabling/%d/82/Parameter 357'%(1+cell)]
+   'handle remapping':{'version':1,'map':[{'key':'Data','value':'Parameter %d'%(305+cell)}]},'bounds':bounds()})
+  playing=bounds(); playing['version']=2; playing['additionalInvalidatingHandles']=['IndexedEnabling/%d/82/Parameter 293'%(1+cell)]
   front_entries.append({'version':2,'componentData':{'version':1,'name':'Next transition %d %d'%(row+1,col+1),'type':'Image',
    'data':{'version':2,'imageType':'Regular','colour':'0','image':'markov-playing.png'}},
    'handle remapping':{'version':1,'map':[]},'bounds':playing})
-  selected=bounds(); selected['version']=2; selected['additionalInvalidatingHandles']=['IndexedEnabling/%d/9/Parameter 351'%row,'IndexedEnabling/%d/9/Parameter 352'%col]
+  selected=bounds(); selected['version']=2; selected['additionalInvalidatingHandles']=['IndexedEnabling/%d/9/Parameter 287'%row,'IndexedEnabling/%d/9/Parameter 288'%col]
   front_entries.append({'version':2,'componentData':{'version':1,'name':'Selected %d %d'%(row+1,col+1),'type':'Image',
    'data':{'version':2,'imageType':'Regular','colour':'0','image':'markov-selected.png'}},
    'handle remapping':{'version':1,'map':[]},'bounds':selected})
   cell_bounds=bounds(); cell_bounds['acceptsHWFocus']='Yes'
   front_entries.append({'version':2,'componentData':{'version':1,'name':'Select %d %d'%(row+1,col+1),'type':'MarkovCellFocus',
    'data':{'version':1,'handleName':'Data'}},
-   'handle remapping':{'version':1,'map':[{'key':'Select','value':'ResetOnGestureEnd/Parameter %d'%(270+cell)},
-                                         {'key':'Data','value':'Parameter 353'}]},'bounds':cell_bounds})
+   'handle remapping':{'version':1,'map':[{'key':'Select','value':'ResetOnGestureEnd/Parameter %d'%(206+cell)},
+                                         {'key':'Data','value':'Parameter 289'}]},'bounds':cell_bounds})
 # Shade unavailable cells for either a small pool or a lower Recent Grains setting.
 for axis in ('row','column'):
  for index in range(9):
@@ -203,11 +203,11 @@ main_clear = {'version': 2,
   'whenVisible': 'Always', 'boundsType': 'Absolute', 'bounds': '983 535 175 70'}}
 # One of these two buttons is visible according to the saved confirmation setting.
 main_clear['bounds']['version'] = 2
-main_clear['bounds']['additionalInvalidatingHandles'] = ['IndexedEnabling/1/2/Parameter 161']
+main_clear['bounds']['additionalInvalidatingHandles'] = ['IndexedEnabling/1/2/Parameter 97']
 immediate_clear = json.loads(json.dumps(main_clear))
 immediate_clear['componentData']['name'] = 'Clear Pool Immediately'
 immediate_clear['handle remapping']['map'][0]['value'] = 'ResetOnGestureEnd/Parameter 12'
-immediate_clear['bounds']['additionalInvalidatingHandles'] = ['IndexedEnabling/0/2/Parameter 161']
+immediate_clear['bounds']['additionalInvalidatingHandles'] = ['IndexedEnabling/0/2/Parameter 97']
 entries = [main_clear, immediate_clear]
 # A compact Mix control sits between the rhythm circle and Recent Grains.
 entries.append({'version':2, 'componentData':{'version':1,'name':'Mix','type':'compactMainMix',
@@ -218,11 +218,11 @@ entries.append({'version':2, 'componentData':{'version':1,'name':'Mix','type':'c
 remove_newest = {'version':2,'componentData':{'version':1,'name':'Remove newest grain','type':'Button',
  'data':{'version':2,'onImage':'remove-newest-on.png','offImage':'remove-newest-off.png',
  'buttonId':1,'numButtonsInGroup':1,'handleName':'Data','gestureBehaviour':'Instant'}},
- 'handle remapping':{'version':1,'map':[{'key':'Data','value':'ResetOnGestureEnd/Parameter 187'}]},
+ 'handle remapping':{'version':1,'map':[{'key':'Data','value':'ResetOnGestureEnd/Parameter 123'}]},
  'bounds':{'version':1,'acceptsHWFocus':'Yes','showWhenDataModelInvalid':'Hide',
  'whenVisible':'Always','boundsType':'Absolute','bounds':'1170 535 91 70'}}
 entries.append(remove_newest)
-for state, conditions in [('off', []), ('flash', ['IndexedEnabling/1/2/Parameter 188'])]:
+for state, conditions in [('off', []), ('flash', ['IndexedEnabling/1/2/Parameter 124'])]:
     entries.append({'version':2,'componentData':{'version':1,'name':'Input detection '+state,'type':'Image',
      'data':{'version':2,'imageType':'Regular','colour':'0','image':'capture-bar-'+state+'.png'}},
      'handle remapping':{'version':1,'map':[]},'bounds':{'version':2,'acceptsHWFocus':'No',
@@ -237,8 +237,8 @@ for pad in range(9):
     box = '%d %d 60 60' % (x,y)
     occupied = ('IndexedEnabling/9/10/Parameter 27' if pad == 8 else
                 'RangedEnabling/%d/9/10/Parameter 27' % (pad+1))
-    glow_states = [('glow-%d' % level, ['IndexedEnabling/%d/46/Parameter 368' % (1+pad*5+(level-1))]) for level in range(1,6)]
-    for state, conditions in [('off', []), ('on', [occupied])] + glow_states + [('flash', ['IndexedEnabling/%d/10/Parameter 186' % (pad+1)])]:
+    glow_states = [('glow-%d' % level, ['IndexedEnabling/%d/46/Parameter 304' % (1+pad*5+(level-1))]) for level in range(1,6)]
+    for state, conditions in [('off', []), ('on', [occupied])] + glow_states + [('flash', ['IndexedEnabling/%d/10/Parameter 122' % (pad+1)])]:
         name='pool-pad-%d-%s.png' % (pad+1,state)
         shutil.copy2(project/'assets'/name, skins/name)
         entries.append({'version':2,'componentData':{'version':1,'name':'Grain pad %d %s'%(pad+1,state),
@@ -257,7 +257,7 @@ for pad in range(9):
     entries.append({'version':2,'componentData':{'version':1,'name':'Play grain %d'%(pad+1),'type':'Button',
       'data':{'version':2,'onImage':'pool-pad-touch-on.png','offImage':'pool-pad-touch.png',
               'buttonId':1,'numButtonsInGroup':1,'handleName':'Data','gestureBehaviour':'Instant'}},
-      'handle remapping':{'version':1,'map':[{'key':'Data','value':'ResetOnGestureEnd/Parameter %d'%(358+pad)}]},
+      'handle remapping':{'version':1,'map':[{'key':'Data','value':'ResetOnGestureEnd/Parameter %d'%(294+pad)}]},
       'bounds':{'version':2,'acceptsHWFocus':'Yes','showWhenDataModelInvalid':'Hide','whenVisible':'Always',
                 'boundsType':'Absolute','bounds':box,'additionalInvalidatingHandles':[occupied]}})
 for name in ('pool-pad-touch.png','pool-pad-touch-on.png','pool-pad-active-outline.png'):
@@ -277,7 +277,7 @@ for segment in range(64):
       'componentData': {'version': 1, 'name': 'Rhythm sector %d' % segment, 'type': 'Image',
        'data': {'version': 2, 'imageType': 'FilmStrip', 'colour': '0', 'image': 'rhythm-large-sector-%02d.png' % segment,
                 'numFrames': 24, 'handleName': 'Data'}},
-      'handle remapping': {'version': 1, 'map': [{'key': 'Data', 'value': 'Parameter %d' % (93+segment)}]},
+      'handle remapping': {'version': 1, 'map': [{'key': 'Data', 'value': 'Parameter %d' % (29+segment)}]},
       'bounds': {'version': 1, 'acceptsHWFocus': 'No', 'showWhenDataModelInvalid': 'Hide',
                  'whenVisible': 'Always', 'boundsType': 'Absolute', 'bounds': '%d %d 86 86' % (x,y)}})
 # Share identical pixel positions across all rhythm lengths.
@@ -299,7 +299,7 @@ for turn in range(64):
 for index,(x,y,turn) in enumerate(shared_positions):
  entries.append({'version':2,'componentData':{'version':1,'name':'Shared rhythm %d'%index,'type':'Image',
   'data':{'version':2,'imageType':'FilmStrip','colour':'0','image':'rhythm-shared-steps.png','numFrames':5,'handleName':'Data'}},
-  'handle remapping':{'version':1,'map':[{'key':'Data','value':'Parameter %d'%(450+index)}]},
+  'handle remapping':{'version':1,'map':[{'key':'Data','value':'Parameter %d'%(386+index)}]},
   'bounds':{'version':1,'acceptsHWFocus':'No','showWhenDataModelInvalid':'Hide','whenVisible':'Always','boundsType':'Absolute','bounds':'%d %d 30 30'%(x,y)}})
 # Styled pulse/step values, displayed as a fraction inside the ring.
 for name, param, frames, y in [('Pulses in ring', 7, 33, 315), ('Steps in ring', 6, 32, 370)]:
@@ -316,7 +316,7 @@ for name in ['rhythm-fraction-pulses.png','rhythm-fraction-steps.png','rhythm-fr
 for index,(x,y,turn) in enumerate(shared_positions):
  entries.append({'version':2,'componentData':{'version':1,'name':'Shared playhead %d'%index,'type':'Image',
   'data':{'version':2,'imageType':'FilmStrip','colour':'0','image':'rhythm-shared-trail-%02d.png'%turn,'numFrames':5,'handleName':'Data'}},
-  'handle remapping':{'version':1,'map':[{'key':'Data','value':'Parameter %d'%(450+index)}]},
+  'handle remapping':{'version':1,'map':[{'key':'Data','value':'Parameter %d'%(386+index)}]},
   'bounds':{'version':1,'acceptsHWFocus':'No','showWhenDataModelInvalid':'Hide','whenVisible':'Always','boundsType':'Absolute','bounds':'%d %d 70 70'%(x-20,y-20)}})
 section = section[:pos] + ''.join('\n' + ' '*24 + json.dumps(e) + ',' for e in entries) + section[pos:]
 # Append the confirmation panel after all other controls so it is on top.
@@ -382,7 +382,7 @@ for control in controls:
   bounds[0] = str(int(bounds[0]) + 20)
   control['bounds']['bounds'] = ' '.join(bounds)
 # Mirror the Main page's input-detection light beside Sensitivity.
-for state, conditions in [('off', []), ('flash', ['IndexedEnabling/1/2/Parameter 188'])]:
+for state, conditions in [('off', []), ('flash', ['IndexedEnabling/1/2/Parameter 124'])]:
  controls.append({'version':2,'componentData':{'version':1,'name':'Grains detection '+state,'type':'Image',
   'data':{'version':2,'imageType':'Regular','colour':'0','image':'pool-led-'+state+'.png'}},
   'handle remapping':{'version':1,'map':[]},'bounds':{'version':2,'acceptsHWFocus':'No',
@@ -433,14 +433,14 @@ for i in range(9):
   'valueColour':'00000000','isBipolar':True,'handleName':'Data'},
   param,'245 %d 650 45'%y,'Yes')
  touch['bounds']['version']=2
- touch['bounds']['additionalInvalidatingHandles']=[active]+['IndexedEnabling/0/2/Parameter %d'%j for j in range(157,161)]
+ touch['bounds']['additionalInvalidatingHandles']=[active]+['IndexedEnabling/0/2/Parameter %d'%j for j in range(93,97)]
  entries.append(touch)
  entries.append(when_pool_count(stereo_label('Pan value %d'%i,'Value',param,'905 %d 95 45'%y),i+1,9))
 for i,(slug,title) in enumerate([('center','Center'),('left-right','Left to Right'),
                                 ('right-left','Right to Left'),('spread','Spread')]):
  entries.append(stereo_entry(title,'Button',{'version':2,'onImage':'stereo-%s-on.png'%slug,
   'offImage':'stereo-%s-off.png'%slug,'buttonId':1,'numButtonsInGroup':1,
-  'handleName':'Data','gestureBehaviour':'Instant'},157+i,'1065 %d 180 56'%(15+i*110),'Yes'))
+  'handleName':'Data','gestureBehaviour':'Instant'},93+i,'1065 %d 180 56'%(15+i*110),'Yes'))
 entries.append(stereo_entry('Mix','knobUni',{'version':1,'handleName':'Data'},10,'1040 430 230 107','Yes'))
 section=section[:components_start]+'\n'+',\n'.join(json.dumps(e) for e in entries)+'\n'+section[components_end:]
 raw=raw[:stereo_start]+section+raw[stereo_end:]
