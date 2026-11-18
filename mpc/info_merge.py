@@ -62,7 +62,9 @@ try! rep.representation(using: .png, properties: [:])!.write(to: URL(fileURLWith
 def update_qlinks(path):
     obj=json.loads(path.read_text()); maps=obj['Screen Mode Q-Links']['map']
     for entry in maps:
-        if entry.get('Tab') == 1: entry['Q-Links']['Q-Link 4'] = 10
+        if entry.get('Tab') == 1:
+            entry['Q-Links']['Q-Link 4'] = -1
+            entry['Q-Links']['Q-Link 11'] = 10
         if entry.get('Tab') == 3:
             for key, value in entry['Q-Links'].items():
                 if value in (9, 10, 25): entry['Q-Links'][key] = -1

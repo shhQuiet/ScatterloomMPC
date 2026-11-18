@@ -196,6 +196,12 @@ immediate_clear['componentData']['name'] = 'Clear Pool Immediately'
 immediate_clear['handle remapping']['map'][0]['value'] = 'ResetOnGestureEnd/Parameter 12'
 immediate_clear['bounds']['additionalInvalidatingHandles'] = ['IndexedEnabling/0/2/Parameter 161']
 entries = [main_clear, immediate_clear]
+# A compact Mix control sits between the rhythm circle and Recent Grains.
+entries.append({'version':2, 'componentData':{'version':1,'name':'Mix','type':'compactMainMix',
+ 'data':{'version':1,'handleName':'Data'}},
+ 'handle remapping':{'version':1,'map':[{'key':'Data','value':'Parameter 10'}]},
+ 'bounds':{'version':1,'acceptsHWFocus':'Yes','showWhenDataModelInvalid':'Hide',
+ 'whenVisible':'Always','boundsType':'Absolute','bounds':'800 196 175 107'}})
 remove_newest = {'version':2,'componentData':{'version':1,'name':'Remove newest grain','type':'Button',
  'data':{'version':2,'onImage':'remove-newest-on.png','offImage':'remove-newest-off.png',
  'buttonId':1,'numButtonsInGroup':1,'handleName':'Data','gestureBehaviour':'Instant'}},
@@ -439,6 +445,15 @@ for component in large['value']['componentsData']:
  elif name=='name': component['bounds']['bounds']='145 18 150 36'
  elif name=='value': component['bounds']['bounds']='145 67 150 36'
 defs.append(large)
+compact=json.loads(json.dumps(next(d for d in defs if d.get('key')=='knobUni')))
+compact['key']='compactMainMix'
+for component in compact['value']['componentsData']:
+ name=component['componentData']['name']
+ if name=='focus': component['bounds']['bounds']='0 0 175 107'
+ elif name=='knob': component['bounds']['bounds']='8 16 75 75'
+ elif name=='name': component['bounds']['bounds']='88 12 85 36'
+ elif name=='value': component['bounds']['bounds']='88 52 85 42'
+defs.append(compact)
 raw=raw[:defs_start]+json.dumps(defs)+raw[defs_start+defs_len:]
 gs=raw.index('"tabName": "GRAINS"'); ge=raw.index('"qlinkBoundsData"',gs)
 section=raw[gs:ge]; start=section.index('"componentsData": [')+len('"componentsData": [')
