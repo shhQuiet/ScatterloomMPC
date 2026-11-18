@@ -179,6 +179,14 @@ if raw.count(main_anchor) != 1: sys.exit('Main tab missing or ambiguous.')
 start = raw.index(main_anchor)
 end = raw.index('"qlinkBoundsData"', start)
 section = raw[start:end]
+# Recent Grains and Mix use the same compact control, with Mix on the right.
+recent_start=section.index('"name": "Recent Grains"')
+recent_end=section.index('"handle remapping"',recent_start)
+part=section[recent_start:recent_end]
+assert part.count('"type": "knobUni"')==1
+section=section[:recent_start]+part.replace('"type": "knobUni"','"type": "compactMainMix"')+section[recent_end:]
+recent_bounds=section.index('"bounds": "983 196 278 107"',recent_start)
+section=section[:recent_bounds]+section[recent_bounds:].replace('"bounds": "983 196 278 107"','"bounds": "800 196 175 107"',1)
 marker = '"componentsData": ['
 pos = section.index(marker) + len(marker)
 main_clear = {'version': 2,
@@ -201,7 +209,7 @@ entries.append({'version':2, 'componentData':{'version':1,'name':'Mix','type':'c
  'data':{'version':1,'handleName':'Data'}},
  'handle remapping':{'version':1,'map':[{'key':'Data','value':'Parameter 10'}]},
  'bounds':{'version':1,'acceptsHWFocus':'Yes','showWhenDataModelInvalid':'Hide',
- 'whenVisible':'Always','boundsType':'Absolute','bounds':'800 196 175 107'}})
+ 'whenVisible':'Always','boundsType':'Absolute','bounds':'983 196 175 107'}})
 remove_newest = {'version':2,'componentData':{'version':1,'name':'Remove newest grain','type':'Button',
  'data':{'version':2,'onImage':'remove-newest-on.png','offImage':'remove-newest-off.png',
  'buttonId':1,'numButtonsInGroup':1,'handleName':'Data','gestureBehaviour':'Instant'}},
@@ -451,7 +459,9 @@ for component in compact['value']['componentsData']:
  name=component['componentData']['name']
  if name=='focus': component['bounds']['bounds']='0 0 175 107'
  elif name=='knob': component['bounds']['bounds']='8 16 75 75'
- elif name=='name': component['bounds']['bounds']='88 12 85 36'
+ elif name=='name':
+  component['bounds']['bounds']='88 12 85 36'
+  component['componentData']['data']['textStyle']['font']['height']=16.0
  elif name=='value': component['bounds']['bounds']='88 52 85 42'
 defs.append(compact)
 raw=raw[:defs_start]+json.dumps(defs)+raw[defs_start+defs_len:]

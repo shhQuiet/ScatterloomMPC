@@ -1668,7 +1668,7 @@
                         "version": 1,
                         "name": "Titillium Web",
                         "style": "Regular",
-                        "height": 26.0
+                        "height": 16.0
                       },
                       "colour": "ff6a6a6c",
                       "justification": "left",
@@ -2362,7 +2362,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "800 196 175 107"
+                "bounds": "983 196 175 107"
               }
             },
             {
@@ -45558,7 +45558,7 @@
               "componentData": {
                 "version": 1,
                 "name": "Recent Grains",
-                "type": "knobUni",
+                "type": "compactMainMix",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -45579,7 +45579,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "983 196 278 107"
+                "bounds": "800 196 175 107"
               }
             },
             {
