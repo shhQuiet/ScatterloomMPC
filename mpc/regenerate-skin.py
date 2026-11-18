@@ -141,7 +141,7 @@ for row in range(9):
   def bounds(): return {'version':1,'acceptsHWFocus':'No','showWhenDataModelInvalid':'Hide','whenVisible':'Always','boundsType':'Absolute','bounds':box}
   entries.append({'version':2,'componentData':{'version':1,'name':'Probability %d %d'%(row+1,col+1),'type':'Image',
    'data':{'version':2,'imageType':'FilmStrip','colour':'0','image':'markov-bar-strip.png','numFrames':101,'handleName':'Data'}},
-   'handle remapping':{'version':1,'map':[{'key':'Data','value':'Parameter %d'%(189+cell)}]},'bounds':bounds()})
+   'handle remapping':{'version':1,'map':[{'key':'Data','value':'Parameter %d'%(369+cell)}]},'bounds':bounds()})
   playing=bounds(); playing['version']=2; playing['additionalInvalidatingHandles']=['IndexedEnabling/%d/82/Parameter 357'%(1+cell)]
   front_entries.append({'version':2,'componentData':{'version':1,'name':'Next transition %d %d'%(row+1,col+1),'type':'Image',
    'data':{'version':2,'imageType':'Regular','colour':'0','image':'markov-playing.png'}},

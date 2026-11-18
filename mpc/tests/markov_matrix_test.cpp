@@ -49,6 +49,12 @@ int main() {
     for (int count : {1, 3, 9}) for (int row=0; row<count; ++row)
         assert(m.chooseNext(row,count,0.5f)==(row+1)%count);
     m.sequential();
+    auto visible=m.effectiveRow(0,5); assert(close(visible[4],1)); assert(close(visible[8],0));
+    m.random(); visible=m.effectiveRow(0,5); for(int i=0;i<5;++i) assert(close(visible[i],0.2f));
+    m.setEffectiveProbability(0,2,5,0.6f); visible=m.effectiveRow(0,5); assert(close(visible[2],0.6f));
+    for(int i=5;i<9;++i) assert(close(m.values[i],0));
+    visible=m.effectiveRow(0,0); for(float v:visible) assert(close(v,0));
+    m.sequential();
     assert(m.values[8] == 1.0f && m.values[9] == 1.0f);
     m.sequential(3);
     assert(m.values[2] == 1.0f && m.values[9] == 1.0f && m.values[19] == 1.0f);

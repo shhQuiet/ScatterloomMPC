@@ -50,6 +50,7 @@ std::atomic<bool> rotationNotificationPending {false}, rotationBaseRestoreSeen {
 std::atomic<float> lastRotationNormalized {0.0f};
 inline static thread_local bool rotationUpdating = false;
 std::array<std::atomic<bool>, 168> markovPending {};
+std::array<std::atomic<bool>, 81> effectivePending {};
 inline static thread_local bool markovUpdating = false;
 std::recursive_mutex markovEditMutex;
 std::atomic<int> markovPresetRefresh {0}, markovPresetCount {0};
@@ -63,6 +64,7 @@ std::thread waveNotifier;
 void runWaveNotifier() {
  int ringCursor = 0, playheadCursor = 0;
  auto nextSensitivityUpdate = std::chrono::steady_clock::now();
+ auto nextMatrixUpdate = nextSensitivityUpdate;
  while (!stopWaveNotifier.load(std::memory_order_acquire)) {
   const auto now = std::chrono::steady_clock::now();
   if (now >= nextSensitivityUpdate) {
@@ -78,7 +80,26 @@ void runWaveNotifier() {
     }
    }
   }
+  if (now >= nextMatrixUpdate) {
+   nextMatrixUpdate = now + std::chrono::milliseconds(100);
+   std::lock_guard<std::recursive_mutex> lock(markovEditMutex);
+   MarkovMatrix m; for(int i=0;i<81;++i) m.values[i]=get(189+i);
+   const int active=std::max(0,std::min(getInt(5),poolStatus.poolCount.load(std::memory_order_relaxed)));
+   for(int row=0;row<9;++row) {
+    const auto values=m.effectiveRow(row,active);
+    for(int col=0;col<9;++col) { const int i=row*9+col;
+     if(std::abs(get(369+i)-values[col])>0.00001f) {set(369+i,values[col]);effectivePending[i].store(true,std::memory_order_release);}
+    }
+   }
+   const int selectedRow=std::clamp(getInt(351)-1,0,8), selectedCol=std::clamp(getInt(352)-1,0,8);
+   const float selected=m.effectiveRow(selectedRow,active)[selectedCol];
+   if(std::abs(get(353)-selected)>0.00001f) {
+    markovUpdating=true; set(353,selected); markovUpdating=false;
+    markovPending[353-189].store(true,std::memory_order_release);
+   }
+  }
   bool sent = false;
+  for(int i=0;i<81 && !sent;++i) if(effectivePending[i].exchange(false,std::memory_order_acq_rel)) {notifyHostParameterChanged(369+i);sent=true;}
   int refreshCount = markovPresetRefresh.exchange(0,std::memory_order_acq_rel);
   if (refreshCount>0) {
    std::lock_guard<std::recursive_mutex> lock(markovEditMutex);
@@ -226,6 +247,7 @@ addParam(mpc::choiceParam("markovPreset", "Patterns", {"Custom", "As Played", "R
 for(int i=0;i<9;++i) {auto id=std::string("poolPad")+std::to_string(i);auto p=mpc::boolParam(id.c_str(), "", false);p.automatable=false;addParam(p);}
 { auto p=mpc::intParam("rotationBase", "", 0, 31, 0); p.automatable=false; addParam(p); }
 { auto p=mpc::intParam("grainGlow", "", 0, 45, 0); p.automatable=false; addParam(p); }
+for(int i=0;i<81;++i) {auto id=std::string("effectiveMarkovCell")+std::to_string(i);auto p=mpc::floatParam(id.c_str(),"",0.0f,1.0f,0.0f);p.automatable=false;addParam(p);}
 for(float &v:last) v=NAN;
 }
 // The RNBO parameters use normalized units; display values in musical units.
@@ -356,15 +378,18 @@ void parameterChanged(int index, float value) override {
   markovUpdating = true;
   auto update = [this](int i, float v) { set(i,v); if(i>=189 && i<=356) markovPending[i-189].store(true,std::memory_order_release); };
   int row=std::clamp(getInt(351)-1,0,8), col=std::clamp(getInt(352)-1,0,8);
+  auto effectiveValue = [this](int r,int c) { MarkovMatrix m; for(int i=0;i<81;++i)m.values[i]=get(189+i); int active=std::max(0,std::min(getInt(5),poolStatus.poolCount.load(std::memory_order_relaxed))); return m.effectiveRow(r,active)[c]; };
   if (index>=270 && index<=350 && value>0.5f) {
    int cell=index-270; row=cell/9; col=cell%9;
-   update(351,float(row+1)); update(352,float(col+1)); update(353,get(189+cell));
+   update(351,float(row+1)); update(352,float(col+1)); update(353,effectiveValue(row,col));
   } else if (index==351 || index==352) {
-   update(353,get(189+row*9+col));
+   update(353,effectiveValue(row,col));
   } else if (index==353) {
    MarkovMatrix m; for(int i=0;i<81;++i)m.values[i]=get(189+i);
-   m.setProbability(row,col,value);
+   int active=std::max(0,std::min(getInt(5),poolStatus.poolCount.load(std::memory_order_relaxed)));
+   m.setEffectiveProbability(row,col,active,value);
    for(int c=0;c<9;++c) update(189+row*9+c,m.values[row*9+c]);
+   update(353,m.effectiveRow(row,active)[col]);
    update(356,0.0f);
   } else if (((index==354 || index==355) && value>0.5f) || (index==356 && value>=0.5f)) {
    MarkovMatrix m; const int preset = index==354 ? 1 : (index==355 ? 2 : int(value)); int active=std::max(1,std::min(getInt(5),poolStatus.poolCount.load(std::memory_order_relaxed)));

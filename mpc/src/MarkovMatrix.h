@@ -45,6 +45,32 @@ struct MarkovMatrix {
         return last;
     }
 
+    // The visible row mirrors the distribution actually used by chooseNext.
+    std::array<float, size> effectiveRow(int row, int active) const noexcept {
+        std::array<float, size> result {};
+        active = std::clamp(active, 0, size);
+        if (row < 0 || row >= active) return result;
+        float sum = 0;
+        for (int col=0; col<active; ++col) {
+            const float w=values[row*size+col];
+            if (std::isfinite(w) && w>0) { result[col]=w; sum+=w; }
+        }
+        if (sum > 0) for (float &w:result) w/=sum;
+        else {
+            const int next=(active<size && row==active-1 && values[row*size+active]>0) ? 0 : (row==0 ? active-1 : row-1);
+            result[next]=1.0f;
+        }
+        return result;
+    }
+    void setEffectiveProbability(int row, int col, int active, float value) noexcept {
+        active=std::clamp(active,0,size);
+        if (row<0 || row>=active || col<0 || col>=active || !std::isfinite(value)) return;
+        auto probabilities=effectiveRow(row,active);
+        value=active==1 ? 1.0f : std::clamp(value,0.0f,1.0f);
+        float other=0; for(int i=0;i<active;++i) if(i!=col) other+=probabilities[i];
+        for(int i=0;i<size;++i) values[row*size+i]=i>=active ? 0.0f : (i==col ? value : (other>0 ? (1-value)*probabilities[i]/other : (1-value)/(active-1)));
+    }
+
     // Presets are complete first-order transition matrices.
     void preset(int kind, int active = size) noexcept {
         active = std::clamp(active, 1, size);
