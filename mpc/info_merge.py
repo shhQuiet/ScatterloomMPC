@@ -70,6 +70,7 @@ def update_qlinks(path):
         if entry.get('Tab') == 3:
             for key, value in entry['Q-Links'].items():
                 if value in (9, 10, 25): entry['Q-Links'][key] = -1
+            entry['Q-Links']['Q-Link 4'] = 10
         if entry.get('Tab') == 4:
             entry['Bank Direction'] = 'RowTopDown'
             entry['Q-Links'] = {'Q-Link %d' % i: -1 for i in range(1,17)}

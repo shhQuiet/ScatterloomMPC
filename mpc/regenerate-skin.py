@@ -441,6 +441,7 @@ for i,(slug,title) in enumerate([('center','Center'),('left-right','Left to Righ
  entries.append(stereo_entry(title,'Button',{'version':2,'onImage':'stereo-%s-on.png'%slug,
   'offImage':'stereo-%s-off.png'%slug,'buttonId':1,'numButtonsInGroup':1,
   'handleName':'Data','gestureBehaviour':'Instant'},157+i,'1065 %d 180 56'%(50+i*125),'Yes'))
+entries.append(stereo_entry('Mix','knobUni',{'version':1,'handleName':'Data'},10,'980 500 278 107','Yes'))
 section=section[:components_start]+'\n'+',\n'.join(json.dumps(e) for e in entries)+'\n'+section[components_end:]
 raw=raw[:stereo_start]+section+raw[stereo_end:]
 shutil.copy2(project/'assets'/'stereo-touch.png', skins/'stereo-touch.png')
