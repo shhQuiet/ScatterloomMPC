@@ -191,7 +191,7 @@ part=section[recent_start:recent_end]
 assert part.count('"type": "knobUni"')==1
 section=section[:recent_start]+part.replace('"type": "knobUni"','"type": "compactMainMix"')+section[recent_end:]
 recent_bounds=section.index('"bounds": "983 196 278 107"',recent_start)
-section=section[:recent_bounds]+section[recent_bounds:].replace('"bounds": "983 196 278 107"','"bounds": "800 196 175 145"',1)
+section=section[:recent_bounds]+section[recent_bounds:].replace('"bounds": "983 196 278 107"','"bounds": "750 196 275 107"',1)
 marker = '"componentsData": ['
 pos = section.index(marker) + len(marker)
 main_clear = {'version': 2,
@@ -214,7 +214,7 @@ entries.append({'version':2, 'componentData':{'version':1,'name':'Mix','type':'c
  'data':{'version':1,'handleName':'Data'}},
  'handle remapping':{'version':1,'map':[{'key':'Data','value':'Parameter 10'}]},
  'bounds':{'version':1,'acceptsHWFocus':'Yes','showWhenDataModelInvalid':'Hide',
- 'whenVisible':'Always','boundsType':'Absolute','bounds':'983 196 175 145'}})
+ 'whenVisible':'Always','boundsType':'Absolute','bounds':'1026 196 245 107'}})
 remove_newest = {'version':2,'componentData':{'version':1,'name':'Remove newest grain','type':'Button',
  'data':{'version':2,'onImage':'remove-newest-on.png','offImage':'remove-newest-off.png',
  'buttonId':1,'numButtonsInGroup':1,'handleName':'Data','gestureBehaviour':'Instant'}},
@@ -462,10 +462,10 @@ compact=json.loads(json.dumps(next(d for d in defs if d.get('key')=='knobUni')))
 compact['key']='compactMainMix'
 for component in compact['value']['componentsData']:
  name=component['componentData']['name']
- if name=='focus': component['bounds']['bounds']='0 0 175 145'
- elif name=='knob': component['bounds']['bounds']='8 36 90 90'
- elif name=='name': component['bounds']['bounds']='8 0 165 34'
- elif name=='value': component['bounds']['bounds']='105 60 68 42'
+ if name=='focus': component['bounds']['bounds']='0 0 245 107'
+ elif name=='knob': component['bounds']['bounds']='8 8 90 90'
+ elif name=='name': component['bounds']['bounds']='110 12 156 36'
+ elif name=='value': component['bounds']['bounds']='110 52 135 42'
 defs.append(compact)
 raw=raw[:defs_start]+json.dumps(defs)+raw[defs_start+defs_len:]
 gs=raw.index('"tabName": "GRAINS"'); ge=raw.index('"qlinkBoundsData"',gs)
