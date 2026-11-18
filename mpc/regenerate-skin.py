@@ -602,3 +602,18 @@ for segment in range(64):
     shutil.copy2(project / 'assets' / ('rhythm-large-sector-%02d.png' % segment), skins / ('rhythm-large-sector-%02d.png' % segment))
 for name in ('rhythm-large-step-strip.png','rhythm-large-playhead-strip.png'):
     shutil.copy2(project/'assets'/name,skins/name)
+
+# The SDK and artwork generators may produce images not used by this skin.
+# Keep the checked-in skin and packaged plugin limited to referenced images.
+referenced_images = set()
+def collect_images(value):
+    if isinstance(value, dict):
+        for child in value.values(): collect_images(child)
+    elif isinstance(value, list):
+        for child in value: collect_images(child)
+    elif isinstance(value, str) and value.lower().endswith('.png'):
+        referenced_images.add(Path(value).name)
+collect_images(json.loads(path.read_text()))
+for image_path in skins.glob('*.png'):
+    if image_path.name not in referenced_images:
+        image_path.unlink()
