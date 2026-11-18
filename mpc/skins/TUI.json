@@ -1805,6 +1805,152 @@
               }
             ]
           }
+        },
+        {
+          "key": "InfoPageNextThree",
+          "value": {
+            "version": 2,
+            "actions": [
+              {
+                "version": 1,
+                "onAction": "Mouse Down",
+                "handler": "Toggle Switch",
+                "handleName": "Local/2/infoPageLow",
+                "additionalData": ""
+              },
+              {
+                "version": 1,
+                "onAction": "Mouse Down",
+                "handler": "Toggle Switch",
+                "handleName": "Local/2/infoPageHigh",
+                "additionalData": ""
+              },
+              {
+                "version": 1,
+                "onAction": "Mouse Down",
+                "handler": "Toggle Switch",
+                "handleName": "Local/2/infoPageTop",
+                "additionalData": ""
+              }
+            ],
+            "backgroundData": {
+              "version": 1,
+              "focussed": {
+                "version": 1,
+                "colour": "0",
+                "image": ""
+              },
+              "unfocussed": {
+                "version": 1,
+                "colour": "0",
+                "image": ""
+              }
+            },
+            "ignoreMousePresses": false,
+            "disableCoarseDataWheel": false,
+            "componentsData": [
+              {
+                "version": 2,
+                "componentData": {
+                  "version": 1,
+                  "name": "InfoPageNextThree art",
+                  "type": "Image",
+                  "data": {
+                    "version": 2,
+                    "imageType": "Regular",
+                    "colour": "0",
+                    "image": "info-next.png"
+                  }
+                },
+                "handle remapping": {
+                  "version": 1,
+                  "map": []
+                },
+                "bounds": {
+                  "version": 2,
+                  "acceptsHWFocus": "No",
+                  "showWhenDataModelInvalid": "Show",
+                  "whenVisible": "Always",
+                  "boundsType": "Absolute",
+                  "bounds": "0 0 72 260",
+                  "additionalInvalidatingHandles": []
+                }
+              }
+            ]
+          }
+        },
+        {
+          "key": "InfoPagePrevThree",
+          "value": {
+            "version": 2,
+            "actions": [
+              {
+                "version": 1,
+                "onAction": "Mouse Down",
+                "handler": "Toggle Switch",
+                "handleName": "Local/2/infoPageLow",
+                "additionalData": ""
+              },
+              {
+                "version": 1,
+                "onAction": "Mouse Down",
+                "handler": "Toggle Switch",
+                "handleName": "Local/2/infoPageHigh",
+                "additionalData": ""
+              },
+              {
+                "version": 1,
+                "onAction": "Mouse Down",
+                "handler": "Toggle Switch",
+                "handleName": "Local/2/infoPageTop",
+                "additionalData": ""
+              }
+            ],
+            "backgroundData": {
+              "version": 1,
+              "focussed": {
+                "version": 1,
+                "colour": "0",
+                "image": ""
+              },
+              "unfocussed": {
+                "version": 1,
+                "colour": "0",
+                "image": ""
+              }
+            },
+            "ignoreMousePresses": false,
+            "disableCoarseDataWheel": false,
+            "componentsData": [
+              {
+                "version": 2,
+                "componentData": {
+                  "version": 1,
+                  "name": "InfoPagePrevThree art",
+                  "type": "Image",
+                  "data": {
+                    "version": 2,
+                    "imageType": "Regular",
+                    "colour": "0",
+                    "image": "info-prev.png"
+                  }
+                },
+                "handle remapping": {
+                  "version": 1,
+                  "map": []
+                },
+                "bounds": {
+                  "version": 2,
+                  "acceptsHWFocus": "No",
+                  "showWhenDataModelInvalid": "Show",
+                  "whenVisible": "Always",
+                  "boundsType": "Absolute",
+                  "bounds": "0 0 72 260",
+                  "additionalInvalidatingHandles": []
+                }
+              }
+            ]
+          }
         }
       ]
     },
@@ -71411,6 +71557,7 @@
                 "boundsType": "Absolute",
                 "bounds": "100 80 1080 390",
                 "additionalInvalidatingHandles": [
+                  "IndexedEnabling/0/2/Local/2/infoPageTop",
                   "IndexedEnabling/0/2/Local/2/infoPageHigh",
                   "IndexedEnabling/0/2/Local/2/infoPageLow"
                 ]
@@ -71439,8 +71586,9 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "900 125 210 210",
+                "bounds": "900 125 234 234",
                 "additionalInvalidatingHandles": [
+                  "IndexedEnabling/0/2/Local/2/infoPageTop",
                   "IndexedEnabling/0/2/Local/2/infoPageHigh",
                   "IndexedEnabling/0/2/Local/2/infoPageLow"
                 ]
@@ -71469,6 +71617,7 @@
                 "boundsType": "Absolute",
                 "bounds": "1198 145 72 260",
                 "additionalInvalidatingHandles": [
+                  "IndexedEnabling/0/2/Local/2/infoPageTop",
                   "IndexedEnabling/0/2/Local/2/infoPageHigh",
                   "IndexedEnabling/0/2/Local/2/infoPageLow"
                 ]
@@ -71499,6 +71648,7 @@
                 "boundsType": "Absolute",
                 "bounds": "100 80 1080 390",
                 "additionalInvalidatingHandles": [
+                  "IndexedEnabling/0/2/Local/2/infoPageTop",
                   "IndexedEnabling/0/2/Local/2/infoPageHigh",
                   "IndexedEnabling/1/2/Local/2/infoPageLow"
                 ]
@@ -71527,6 +71677,7 @@
                 "boundsType": "Absolute",
                 "bounds": "10 145 72 260",
                 "additionalInvalidatingHandles": [
+                  "IndexedEnabling/0/2/Local/2/infoPageTop",
                   "IndexedEnabling/0/2/Local/2/infoPageHigh",
                   "IndexedEnabling/1/2/Local/2/infoPageLow"
                 ]
@@ -71555,6 +71706,7 @@
                 "boundsType": "Absolute",
                 "bounds": "1198 145 72 260",
                 "additionalInvalidatingHandles": [
+                  "IndexedEnabling/0/2/Local/2/infoPageTop",
                   "IndexedEnabling/0/2/Local/2/infoPageHigh",
                   "IndexedEnabling/1/2/Local/2/infoPageLow"
                 ]
@@ -71585,6 +71737,7 @@
                 "boundsType": "Absolute",
                 "bounds": "100 80 1080 390",
                 "additionalInvalidatingHandles": [
+                  "IndexedEnabling/0/2/Local/2/infoPageTop",
                   "IndexedEnabling/1/2/Local/2/infoPageHigh",
                   "IndexedEnabling/0/2/Local/2/infoPageLow"
                 ]
@@ -71613,6 +71766,7 @@
                 "boundsType": "Absolute",
                 "bounds": "10 145 72 260",
                 "additionalInvalidatingHandles": [
+                  "IndexedEnabling/0/2/Local/2/infoPageTop",
                   "IndexedEnabling/1/2/Local/2/infoPageHigh",
                   "IndexedEnabling/0/2/Local/2/infoPageLow"
                 ]
@@ -71641,6 +71795,7 @@
                 "boundsType": "Absolute",
                 "bounds": "1198 145 72 260",
                 "additionalInvalidatingHandles": [
+                  "IndexedEnabling/0/2/Local/2/infoPageTop",
                   "IndexedEnabling/1/2/Local/2/infoPageHigh",
                   "IndexedEnabling/0/2/Local/2/infoPageLow"
                 ]
@@ -71671,6 +71826,7 @@
                 "boundsType": "Absolute",
                 "bounds": "100 80 1080 390",
                 "additionalInvalidatingHandles": [
+                  "IndexedEnabling/0/2/Local/2/infoPageTop",
                   "IndexedEnabling/1/2/Local/2/infoPageHigh",
                   "IndexedEnabling/1/2/Local/2/infoPageLow"
                 ]
@@ -71699,8 +71855,98 @@
                 "boundsType": "Absolute",
                 "bounds": "10 145 72 260",
                 "additionalInvalidatingHandles": [
+                  "IndexedEnabling/0/2/Local/2/infoPageTop",
                   "IndexedEnabling/1/2/Local/2/infoPageHigh",
                   "IndexedEnabling/1/2/Local/2/infoPageLow"
+                ]
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "Next help page",
+                "type": "InfoPageNextThree",
+                "data": {
+                  "version": 1,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 2,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1198 145 72 260",
+                "additionalInvalidatingHandles": [
+                  "IndexedEnabling/0/2/Local/2/infoPageTop",
+                  "IndexedEnabling/1/2/Local/2/infoPageHigh",
+                  "IndexedEnabling/1/2/Local/2/infoPageLow"
+                ]
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "Help page 5",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "Regular",
+                  "colour": "0",
+                  "image": "info-page-4.png"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 2,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "100 80 1080 390",
+                "additionalInvalidatingHandles": [
+                  "IndexedEnabling/1/2/Local/2/infoPageTop",
+                  "IndexedEnabling/0/2/Local/2/infoPageHigh",
+                  "IndexedEnabling/0/2/Local/2/infoPageLow"
+                ]
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "Previous help page",
+                "type": "InfoPagePrevThree",
+                "data": {
+                  "version": 1,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 2,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "10 145 72 260",
+                "additionalInvalidatingHandles": [
+                  "IndexedEnabling/1/2/Local/2/infoPageTop",
+                  "IndexedEnabling/0/2/Local/2/infoPageHigh",
+                  "IndexedEnabling/0/2/Local/2/infoPageLow"
                 ]
               }
             },
