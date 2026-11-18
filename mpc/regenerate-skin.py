@@ -125,6 +125,11 @@ entries.append({'version':2,'componentData':{'version':1,'name':'Markov explanat
  'data':{'version':2,'imageType':'Regular','colour':'0','image':'markov-explanation.png'}},
  'handle remapping':{'version':1,'map':[]},'bounds':{'version':1,'acceptsHWFocus':'No',
  'showWhenDataModelInvalid':'Show','whenVisible':'Always','boundsType':'Absolute','bounds':'985 170 270 280'}})
+entries.append({'version':2,'componentData':{'version':1,'name':'Recent Grains','type':'knobUni',
+ 'data':{'version':1,'handleName':'Data'}},
+ 'handle remapping':{'version':1,'map':[{'key':'Data','value':'Parameter 5'}]},
+ 'bounds':{'version':1,'acceptsHWFocus':'Yes','showWhenDataModelInvalid':'Hide',
+ 'whenVisible':'Always','boundsType':'Absolute','bounds':'983 480 278 107'}})
 from PIL import Image, ImageDraw, ImageFont
 explanation = Image.new('RGBA', (270, 280), (0,0,0,0))
 draw = ImageDraw.Draw(explanation)

@@ -66,6 +66,7 @@ def update_qlinks(path):
             entry['Q-Links']['Q-Link 4'] = -1
             entry['Q-Links']['Q-Link 11'] = 5
             entry['Q-Links']['Q-Link 12'] = 10
+        if entry.get('Tab') == 2: entry['Q-Links']['Q-Link 4'] = 5
         if entry.get('Tab') == 3:
             for key, value in entry['Q-Links'].items():
                 if value in (9, 10, 25): entry['Q-Links'][key] = -1
