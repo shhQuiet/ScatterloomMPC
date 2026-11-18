@@ -280,19 +280,27 @@ for segment in range(64):
       'handle remapping': {'version': 1, 'map': [{'key': 'Data', 'value': 'Parameter %d' % (93+segment)}]},
       'bounds': {'version': 1, 'acceptsHWFocus': 'No', 'showWhenDataModelInvalid': 'Hide',
                  'whenVisible': 'Always', 'boundsType': 'Absolute', 'bounds': '%d %d 86 86' % (x,y)}})
-for count in range(1, 33):
-    for step in range(count):
-        angle = 2.0 * math.pi * step / count - math.pi / 2.0
-        x = round(515 + 175 * math.cos(angle) - 15)
-        y = round(365 + 175 * math.sin(angle) - 15)
-        entries.append({'version': 2,
-          'componentData': {'version': 1, 'name': 'Rhythm %d of %d' % (step+1,count), 'type': 'Image',
-            'data': {'version': 2, 'imageType': 'FilmStrip', 'colour': '0', 'image': 'rhythm-large-step-strip.png',
-                     'numFrames': 2, 'handleName': 'Data'}},
-          'handle remapping': {'version': 1, 'map': [{'key': 'Data', 'value': 'Parameter %d' % (28+step)}]},
-          'bounds': {'version': 2, 'acceptsHWFocus': 'No', 'showWhenDataModelInvalid': 'Hide',
-            'whenVisible': 'Always', 'boundsType': 'Absolute', 'bounds': '%d %d 30 30' % (x,y),
-            'additionalInvalidatingHandles': ['IndexedEnabling/%d/32/Parameter 6' % (count-1)]}})
+# Share identical pixel positions across all rhythm lengths.
+def rhythm_position(count, step):
+ angle=2.0*math.pi*step/count-math.pi/2.0
+ return (round(515+175*math.cos(angle)-15), round(365+175*math.sin(angle)-15), round(step*64/count)%64)
+shared_positions=sorted({rhythm_position(n,i) for n in range(1,33) for i in range(n)})
+if len(shared_positions)!=325: sys.exit('Unexpected shared rhythm position count')
+step_source=Image.open(project/'assets'/'rhythm-large-step-strip.png').convert('RGBA')
+step_strip=Image.new('RGBA',(30,150))
+for frame,src in ((1,0),(2,1),(3,0),(4,1)):
+ step_strip.alpha_composite(step_source.crop((0,src*30,30,(src+1)*30)),(0,frame*30))
+step_strip.save(skins/'rhythm-shared-steps.png')
+for turn in range(64):
+ source=Image.open(project/'assets'/('rhythm-trail-%02d.png'%turn)).convert('RGBA')
+ strip=Image.new('RGBA',(70,350))
+ for frame in (3,4): strip.alpha_composite(source.crop((0,70,70,140)),(0,frame*70))
+ strip.save(skins/('rhythm-shared-trail-%02d.png'%turn))
+for index,(x,y,turn) in enumerate(shared_positions):
+ entries.append({'version':2,'componentData':{'version':1,'name':'Shared rhythm %d'%index,'type':'Image',
+  'data':{'version':2,'imageType':'FilmStrip','colour':'0','image':'rhythm-shared-steps.png','numFrames':5,'handleName':'Data'}},
+  'handle remapping':{'version':1,'map':[{'key':'Data','value':'Parameter %d'%(450+index)}]},
+  'bounds':{'version':1,'acceptsHWFocus':'No','showWhenDataModelInvalid':'Hide','whenVisible':'Always','boundsType':'Absolute','bounds':'%d %d 30 30'%(x,y)}})
 # Styled pulse/step values, displayed as a fraction inside the ring.
 for name, param, frames, y in [('Pulses in ring', 7, 33, 315), ('Steps in ring', 6, 32, 370)]:
  entries.append({'version':2,'componentData':{'version':1,'name':name,'type':'Image',
@@ -304,20 +312,12 @@ entries.append({'version':2,'componentData':{'version':1,'name':'Rhythm fraction
  'handle remapping':{'version':1,'map':[]},'bounds':{'version':1,'acceptsHWFocus':'No','showWhenDataModelInvalid':'Show','whenVisible':'Always','boundsType':'Absolute','bounds':'488 363 54 3'}})
 for name in ['rhythm-fraction-pulses.png','rhythm-fraction-steps.png','rhythm-fraction-divider.png'] + ['rhythm-trail-%02d.png'%i for i in range(64)]:
  shutil.copy2(project/'assets'/name, skins/name)
-# An overlay follows the engine's current step independently of pulse lights.
-for count in range(1, 33):
-    for step in range(count):
-        angle = 2.0 * math.pi * step / count - math.pi / 2.0
-        x = round(515 + 175 * math.cos(angle) - 15)
-        y = round(365 + 175 * math.sin(angle) - 15)
-        entries.append({'version': 2,
-          'componentData': {'version': 1, 'name': 'Playhead %d of %d' % (step+1,count), 'type': 'Image',
-            'data': {'version': 2, 'imageType': 'FilmStrip', 'colour': '0', 'image': 'rhythm-trail-%02d.png' % (round(step * 64 / count) % 64),
-                     'numFrames': 2, 'handleName': 'Data'}},
-          'handle remapping': {'version': 1, 'map': [{'key': 'Data', 'value': 'Parameter %d' % (61+step)}]},
-          'bounds': {'version': 2, 'acceptsHWFocus': 'No', 'showWhenDataModelInvalid': 'Hide',
-            'whenVisible': 'Always', 'boundsType': 'Absolute', 'bounds': '%d %d 70 70' % (x-20,y-20),
-            'additionalInvalidatingHandles': ['IndexedEnabling/%d/32/Parameter 6' % (count-1)]}})
+# Draw playhead overlays after all step lights, as in the original layout.
+for index,(x,y,turn) in enumerate(shared_positions):
+ entries.append({'version':2,'componentData':{'version':1,'name':'Shared playhead %d'%index,'type':'Image',
+  'data':{'version':2,'imageType':'FilmStrip','colour':'0','image':'rhythm-shared-trail-%02d.png'%turn,'numFrames':5,'handleName':'Data'}},
+  'handle remapping':{'version':1,'map':[{'key':'Data','value':'Parameter %d'%(450+index)}]},
+  'bounds':{'version':1,'acceptsHWFocus':'No','showWhenDataModelInvalid':'Hide','whenVisible':'Always','boundsType':'Absolute','bounds':'%d %d 70 70'%(x-20,y-20)}})
 section = section[:pos] + ''.join('\n' + ' '*24 + json.dumps(e) + ',' for e in entries) + section[pos:]
 # Append the confirmation panel after all other controls so it is on top.
 confirm_visible = ['IndexedEnabling/1/2/Local/2/clearConfirm']
@@ -426,15 +426,15 @@ for i in range(9):
   'colour':'0','image':'stereo-disabled.png'},param,'245 %d 650 45'%y)
  empty_display['bounds']['showWhenDataModelInvalid']='Show'
  entries.append(when_pool_count(empty_display,0,i))
- for position in range(33):
-  x0=245+round(position*650/33); x1=245+round((position+1)*650/33)
-  touch=stereo_entry('Pan %d position %d'%(i,position),'Button',{'version':2,
-   'onImage':'stereo-touch.png','offImage':'stereo-touch.png','buttonId':position,
-   'numButtonsInGroup':33,'handleName':'Data','gestureBehaviour':'Instant'},
-   param,'%d %d %d 45'%(x0,y,x1-x0),'No')
-  touch['bounds']['version']=2
-  touch['bounds']['additionalInvalidatingHandles']=[active]+['IndexedEnabling/0/2/Parameter %d'%j for j in range(157,161)]
-  entries.append(touch)
+ # A transparent native slider retains the existing film-strip artwork
+ # while replacing 33 separate touch zones with one control.
+ touch=stereo_entry('Pan %d touch'%i,'Slider',{'version':2,'sliderType':'ColourBar',
+  'direction':'Horizontal','backgroundColour':'00000000','outlineColour':'00000000',
+  'valueColour':'00000000','isBipolar':True,'handleName':'Data'},
+  param,'245 %d 650 45'%y,'Yes')
+ touch['bounds']['version']=2
+ touch['bounds']['additionalInvalidatingHandles']=[active]+['IndexedEnabling/0/2/Parameter %d'%j for j in range(157,161)]
+ entries.append(touch)
  entries.append(when_pool_count(stereo_label('Pan value %d'%i,'Value',param,'905 %d 95 45'%y),i+1,9))
 for i,(slug,title) in enumerate([('center','Center'),('left-right','Left to Right'),
                                 ('right-left','Right to Left'),('spread','Spread')]):
@@ -477,8 +477,7 @@ loop_frame={'version':2,'componentData':{'version':1,'name':'Loop settings group
  'showWhenDataModelInvalid':'Show','whenVisible':'Always','boundsType':'Absolute','bounds':'655 20 315 310'}}
 section=section[:start]+json.dumps(loop_frame)+','+section[start:]
 controls=[stereo_entry('Loop Feedback','knobUni',{'version':1,'handleName':'Data'},9,'685 45 278 107','Yes'),
- stereo_entry('Loop Time','knobUniMenu',{'version':1,'handleName':'Data'},25,'685 196 278 107','Yes'),
- stereo_entry('Mix','largeMixKnob',{'version':1,'handleName':'Data'},10,'980 480 300 145','Yes')]
+ stereo_entry('Loop Time','knobUniMenu',{'version':1,'handleName':'Data'},25,'685 196 278 107','Yes')]
 last=section.rfind(']');section=section[:last].rstrip()+','+','.join(json.dumps(c) for c in controls)+'\n'+section[last:]
 raw=raw[:gs]+section+raw[ge:]
 shutil.copy2(project/'assets'/'loop-settings-frame.png',skins/'loop-settings-frame.png')

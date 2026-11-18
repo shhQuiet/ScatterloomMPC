@@ -3,6 +3,7 @@
 #include "StatusBridge.h"
 #include "PoolAudition.h"
 #include "RotationMath.h"
+#include "RhythmPositions.h"
 #include <cmath>
 #include <array>
 #include <atomic>
@@ -51,6 +52,7 @@ std::atomic<float> lastRotationNormalized {0.0f};
 inline static thread_local bool rotationUpdating = false;
 std::array<std::atomic<bool>, 168> markovPending {};
 std::array<std::atomic<bool>, 81> effectivePending {};
+std::array<std::atomic<bool>, kRhythmPositionCount> sharedRhythmPending {};
 inline static thread_local bool markovUpdating = false;
 std::recursive_mutex markovEditMutex;
 std::atomic<int> markovPresetRefresh {0}, markovPresetCount {0};
@@ -62,7 +64,7 @@ int poolAnimationPosition = 0;
 int poolAnimationLed = -1;
 std::thread waveNotifier;
 void runWaveNotifier() {
- int ringCursor = 0, playheadCursor = 0;
+ int ringCursor = 0, playheadCursor = 0, sharedCursor = 0;
  auto nextSensitivityUpdate = std::chrono::steady_clock::now();
  auto nextMatrixUpdate = nextSensitivityUpdate;
  while (!stopWaveNotifier.load(std::memory_order_acquire)) {
@@ -100,6 +102,10 @@ void runWaveNotifier() {
   }
   bool sent = false;
   for(int i=0;i<81 && !sent;++i) if(effectivePending[i].exchange(false,std::memory_order_acq_rel)) {notifyHostParameterChanged(369+i);sent=true;}
+  for (int scanned=0;scanned<kRhythmPositionCount && !sent;++scanned) {
+   const int i=sharedCursor; sharedCursor=(sharedCursor+1)%kRhythmPositionCount;
+   if(sharedRhythmPending[i].exchange(false,std::memory_order_acq_rel)) {notifyHostParameterChanged(450+i);sent=true;}
+  }
   int refreshCount = markovPresetRefresh.exchange(0,std::memory_order_acq_rel);
   if (refreshCount>0) {
    std::lock_guard<std::recursive_mutex> lock(markovEditMutex);
@@ -248,6 +254,7 @@ for(int i=0;i<9;++i) {auto id=std::string("poolPad")+std::to_string(i);auto p=mp
 { auto p=mpc::intParam("rotationBase", "", 0, 31, 0); p.automatable=false; addParam(p); }
 { auto p=mpc::intParam("grainGlow", "", 0, 45, 0); p.automatable=false; addParam(p); }
 for(int i=0;i<81;++i) {auto id=std::string("effectiveMarkovCell")+std::to_string(i);auto p=mpc::floatParam(id.c_str(),"",0.0f,1.0f,0.0f);p.automatable=false;addParam(p);}
+for(int i=0;i<kRhythmPositionCount;++i) {auto id=std::string("sharedRhythm")+std::to_string(i);auto p=mpc::intParam(id.c_str(),"",0,4,0);p.automatable=false;addParam(p);}
 for(float &v:last) v=NAN;
 }
 // The RNBO parameters use normalized units; display values in musical units.
@@ -547,7 +554,8 @@ if (getInt(14)>0 && getInt(8)!=ringRotation) {
  rotationNotificationPending.store(true,std::memory_order_release);
 }
 const bool displayDirty = ringDirty.exchange(false, std::memory_order_relaxed);
-if (displayDirty || ringSteps != lastRingSteps || ringPulses != lastRingPulses || ringRotation != lastRingRotation) {
+const bool sharedStructureChanged = displayDirty || ringSteps != lastRingSteps || ringPulses != lastRingPulses || ringRotation != lastRingRotation;
+if (sharedStructureChanged) {
  for (int i=0;i<32;++i) {
   const float active = (i < ringSteps && (((i + ringRotation) % ringSteps) * ringPulses) % ringSteps < ringPulses) ? 1.0f : 0.0f;
   const int index = 28 + i;
@@ -558,12 +566,23 @@ if (displayDirty || ringSteps != lastRingSteps || ringPulses != lastRingPulses |
 // The engine reports rotated step numbers. Convert them to ring positions.
 const int currentStep = scatterloomPlaying ? poolStatus.playingStep.load(std::memory_order_relaxed) : -1;
 const int visibleStep = currentStep >= 0 ? (currentStep - ringRotation + ringSteps) % ringSteps : -1;
+const bool sharedPlayheadChanged = displayDirty || visibleStep != lastVisibleStep;
 if (displayDirty || visibleStep != lastVisibleStep) {
  for (int i=0; i<32; ++i) {
   const int index=61+i; const float active = i == visibleStep ? 1.0f : 0.0f;
   if (get(index) != active) { set(index, active); pendingWave[index-firstWaveParam].store(true,std::memory_order_release); }
  }
  lastVisibleStep = visibleStep;
+}
+if (sharedStructureChanged || sharedPlayheadChanged) {
+ std::array<int,kRhythmPositionCount> state {};
+ for(int i=0;i<ringSteps;++i) {
+  const int active=(((i+ringRotation)%ringSteps)*ringPulses)%ringSteps < ringPulses;
+  state[kRhythmPositionMap[ringSteps-1][i]]=1+active+(i==visibleStep ? 2 : 0);
+ }
+ for(int i=0;i<kRhythmPositionCount;++i) if(getNormalised(450+i)!=0.25f*state[i]) {
+  set(450+i,float(state[i])); sharedRhythmPending[i].store(true,std::memory_order_release);
+ }
 }
 // Arc length is grain duration relative to the entire rhythm cycle.
 static constexpr double rates[] = {0.125, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0/3.0, 2.0, 3.0, 4.0/3.0, 4.0, 6.0, 8.0/3.0, 8.0};
