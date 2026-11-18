@@ -1651,7 +1651,7 @@
                   "showWhenDataModelInvalid": "Show",
                   "whenVisible": "Always",
                   "boundsType": "Absolute",
-                  "bounds": "8 16 75 75"
+                  "bounds": "8 36 65 65"
                 }
               },
               {
@@ -1668,7 +1668,7 @@
                         "version": 1,
                         "name": "Titillium Web",
                         "style": "Regular",
-                        "height": 16.0
+                        "height": 26.0
                       },
                       "colour": "ff6a6a6c",
                       "justification": "left",
@@ -1688,7 +1688,7 @@
                   "showWhenDataModelInvalid": "Show",
                   "whenVisible": "Always",
                   "boundsType": "Absolute",
-                  "bounds": "88 12 85 36"
+                  "bounds": "8 0 165 34"
                 }
               },
               {
@@ -1725,7 +1725,7 @@
                   "showWhenDataModelInvalid": "Show",
                   "whenVisible": "Always",
                   "boundsType": "Absolute",
-                  "bounds": "88 52 85 42"
+                  "bounds": "85 52 85 42"
                 }
               }
             ]

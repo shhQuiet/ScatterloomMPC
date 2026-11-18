@@ -463,11 +463,9 @@ compact['key']='compactMainMix'
 for component in compact['value']['componentsData']:
  name=component['componentData']['name']
  if name=='focus': component['bounds']['bounds']='0 0 175 107'
- elif name=='knob': component['bounds']['bounds']='8 16 75 75'
- elif name=='name':
-  component['bounds']['bounds']='88 12 85 36'
-  component['componentData']['data']['textStyle']['font']['height']=16.0
- elif name=='value': component['bounds']['bounds']='88 52 85 42'
+ elif name=='knob': component['bounds']['bounds']='8 36 65 65'
+ elif name=='name': component['bounds']['bounds']='8 0 165 34'
+ elif name=='value': component['bounds']['bounds']='85 52 85 42'
 defs.append(compact)
 raw=raw[:defs_start]+json.dumps(defs)+raw[defs_start+defs_len:]
 gs=raw.index('"tabName": "GRAINS"'); ge=raw.index('"qlinkBoundsData"',gs)
