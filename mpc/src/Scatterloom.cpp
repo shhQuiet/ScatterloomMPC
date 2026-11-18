@@ -3,7 +3,6 @@
 #include "StatusBridge.h"
 #include "PoolAudition.h"
 #include "RotationMath.h"
-#include "LicenseClient.h"
 #include <cmath>
 #include <array>
 #include <atomic>
@@ -41,7 +40,6 @@ static constexpr int firstWaveParam = 28, waveParamCount = 129;
 std::array<std::atomic<bool>, waveParamCount> pendingWave {};
 std::atomic<bool> stopWaveNotifier {false};
 std::atomic<bool> pulsesNotificationPending {false};
-std::atomic<bool> demoNotificationPending {false};
 std::atomic<bool> poolAnimationNotificationPending {false};
 std::atomic<bool> detectionNotificationPending {false};
 std::atomic<bool> transitionNotificationPending {false};
@@ -103,9 +101,6 @@ void runWaveNotifier() {
   if (poolAnimationNotificationPending.exchange(false, std::memory_order_acq_rel)) {
    notifyHostParameterChanged(186); sent = true;
   }
-  if (demoNotificationPending.exchange(false, std::memory_order_acq_rel)) {
-   notifyHostParameterChanged(185); sent = true;
-  }
   if (!sent && pulsesNotificationPending.exchange(false, std::memory_order_acq_rel)) {
    notifyHostParameterChanged(7); sent = true;
   }
@@ -148,25 +143,6 @@ std::array<std::vector<float>, 2> auditionBuffer;
 PoolAudition poolAudition;
 std::atomic<unsigned> pendingAudition {0};
 float stoppedDryBlend = 0.0f;
-float demoSilenceBlend = 0.0f;
-uint64_t demoFrames = 0;
-std::mutex licenseEmailMutex;
-std::string licenseEmail;
-LicenseClient licensing {[this](LicenseClient::Display d) {
- set(163, static_cast<float>(d.state)); set(164, static_cast<float>(d.first)); set(165, static_cast<float>(d.second));
- for (int i=163; i<=165; ++i) notifyHostParameterChanged(i);
- if (d.state == LicenseClient::Registered || d.state == LicenseClient::Unregistered) {
-  { std::lock_guard<std::mutex> lock(licenseEmailMutex); licenseEmail=d.email; }
-  size_t offset=0; int lines=0;
-  while(offset<d.email.size()) {
-   size_t end=std::min(offset+30,d.email.size());
-   while(end<d.email.size() && end>offset && (static_cast<unsigned char>(d.email[end]) & 0xc0)==0x80) --end;
-   offset=end; ++lines;
-  }
-  set(184, lines>4 ? 1.0f : 0.0f); notifyHostParameterChanged(184);
-  for (int i=167; i<183; ++i) { set(i, get(i)>0.5f ? 0.0f : 1.0f); notifyHostParameterChanged(i); }
- }
-}};
 bool transportBlendReady = false;
 
 public:
@@ -225,14 +201,11 @@ for (const char* name : {"Center", "Left to Right", "Right to Left", "Spread"}) 
 }
 addParam(mpc::boolParam("confirmClear", "Confirm Clear", true));
 addParam(mpc::boolParam("playEnabled", "Play", true));
-{ auto p=mpc::intParam("licenseStatus", "", 0, 5, 0); p.automatable=false; addParam(p); }
-{auto p=mpc::intParam("pairCodeFirst", "", 0, 1224, 0); p.automatable=false; addParam(p);}
-{auto p=mpc::intParam("pairCodeSecond", "", 0, 42874, 0); p.automatable=false; addParam(p);}
-{ auto p=mpc::boolParam("beginRegistration", "", false); p.automatable=false; addParam(p); }
-for (int i=0; i<16; ++i) { auto p=mpc::boolParam(("licenseEmailLine"+std::to_string(i)).c_str(), "", false); p.automatable=false; addParam(p); }
-{ auto p=mpc::boolParam("removeLicense", "", false); p.automatable=false; addParam(p); }
-{ auto p=mpc::boolParam("licenseEmailLong", "", false); p.automatable=false; addParam(p); }
-{ auto p=mpc::boolParam("demoSilenceActive", "", false); p.automatable=false; addParam(p); }
+// Retain retired parameter positions for compatibility with saved projects.
+{ auto p=mpc::intParam("reserved163", "", 0, 5, 0); p.automatable=false; addParam(p); }
+{ auto p=mpc::intParam("reserved164", "", 0, 1224, 0); p.automatable=false; addParam(p); }
+{ auto p=mpc::intParam("reserved165", "", 0, 42874, 0); p.automatable=false; addParam(p); }
+for (int i=166; i<=185; ++i) { auto id=std::string("reserved")+std::to_string(i); auto p=mpc::boolParam(id.c_str(), "", false); p.automatable=false; addParam(p); }
 { auto p=mpc::intParam("poolAnimation", "", 0, 9, 0); p.automatable=false; addParam(p); }
 { auto p=mpc::boolParam("removeNewest", "", false); p.automatable=false; addParam(p); }
 { auto p=mpc::boolParam("detectionFlash", "", false); p.automatable=false; addParam(p); }
@@ -258,29 +231,7 @@ for(float &v:last) v=NAN;
 // The RNBO parameters use normalized units; display values in musical units.
 bool formatValue(int index, float value, std::string& out) override {
  char text[32];
- if (index>=167 && index<183) {
-  std::lock_guard<std::mutex> lock(licenseEmailMutex);
-  size_t pos=0;
-  for (int line=0; line<=index-167; ++line) {
-   if(pos>=licenseEmail.size()){out.clear();return true;}
-   size_t end=std::min(pos+30,licenseEmail.size());
-   while(end<licenseEmail.size() && end>pos && (static_cast<unsigned char>(licenseEmail[end]) & 0xc0)==0x80) --end;
-   if(line==index-167){out=licenseEmail.substr(pos,end-pos);return true;}
-   pos=end;
-  }
- }
  switch(index) {
-  case 163: {const char* names[]={"MPC PAIRING CODE", "CONNECTING", "MPC PAIRING CODE", "REGISTERED", "TRY AGAIN", "CODE EXPIRED"};
-   std::snprintf(text,sizeof(text),"%s",names[std::max(0,std::min(5,(int)std::lround(value)))]); break;}
-  case 164: case 165: {
-   constexpr char alphabet[]="0123456789abcdefghijklmnpqrstuvwxyz";
-   const int digits=index==164 ? 5 : 3;
-   int first=std::max(0,std::min(1224,(int)std::lround(value)));
-   int second=std::max(0,std::min(42874,(int)std::lround(index==164 ? get(165) : value)));
-   for(int i=digits-1;i>=digits-3;--i){text[i]=alphabet[second%35];second/=35;}
-   if(index==164) for(int i=1;i>=0;--i){text[i]=alphabet[first%35];first/=35;}
-   text[digits]='\0'; break;
-  }
   case 3: std::snprintf(text,sizeof(text),"%.0f ms",(0.02f + 1.98f * value * value) * 1000.0f); break;
   case 4: std::snprintf(text,sizeof(text),"%.0f ms",value * 1000.0f); break;
   case 26: std::snprintf(text,sizeof(text),"%+.0f ms",value * 1000.0f); break;
@@ -291,7 +242,6 @@ bool formatValue(int index, float value, std::string& out) override {
  out = text; return true;
 }
 ~Scatterloom() override {
- licensing.shutdown();
  std::fprintf(stderr, "Scatterloom: closing; stopping display notifier\n");
  stopWaveNotifier.store(true, std::memory_order_release);
  if (waveNotifier.joinable()) waveNotifier.join();
@@ -303,7 +253,6 @@ void prepare(double sr,int block) override {
  poolAnimationFrame = 0; poolAnimationPosition = 0; poolAnimationLed = -1;
  lastCaptureSequence = poolStatus.captureSequence.load(std::memory_order_relaxed);
  set(186, 0.0f); poolAnimationNotificationPending.store(true, std::memory_order_release);
- licensing.start();
  for (auto& channel : dryInput) channel.resize(std::max(block, 8192));
  for (auto& channel : auditionBuffer) channel.resize(std::max(block, 8192));
  poolAudition.reset(); pendingAudition.store(0,std::memory_order_relaxed);
@@ -427,8 +376,6 @@ void parameterChanged(int index, float value) override {
  }
 
  if (index == 187 && value > 0.5f) removeNewestRequested.store(true, std::memory_order_release);
- if (index == 166 && value > 0.5f) licensing.begin();
- if (index == 183 && value > 0.5f) licensing.removeLicense();
  if ((index == 6 || index == 7) && getInt(7) > getInt(6)) {
   set(7, static_cast<float>(getInt(6)));
   pulsesNotificationPending.store(true, std::memory_order_release);
@@ -679,27 +626,17 @@ if (poolCount != lastReportedPoolCount || getInt(27) != poolCount) {
 }
 // Crossfade on transport transitions to avoid a click; continue processing
 // internally so capture and existing engine state remain available.
-// After ten minutes, silence the demo for five seconds; repeat after three
-// more minutes of processing. A valid license removes the interruption.
-const bool registered = licensing.isLicensed();
-const double elapsed = static_cast<double>(demoFrames) / std::max(1.0, c.sampleRate);
-const bool demoSilence = !registered && elapsed >= 600.0 && std::fmod(elapsed - 600.0, 185.0) < 5.0;
-if (getBool(185) != demoSilence) { set(185, demoSilence ? 1.0f : 0.0f); demoNotificationPending.store(true, std::memory_order_release); }
-if (!registered) demoFrames += static_cast<uint64_t>(std::max(0,c.numFrames));
 const float targetDry = scatterloomPlaying ? 0.0f : 1.0f;
-const float targetSilence = demoSilence ? 1.0f : 0.0f;
 if (!transportBlendReady) { stoppedDryBlend = targetDry; transportBlendReady = true; }
 const float fadeStep = static_cast<float>(1.0 / std::max(1.0, c.sampleRate * 0.005));
 for (int n=0; n<c.numFrames; ++n) {
  if (stoppedDryBlend < targetDry) stoppedDryBlend = std::min(targetDry, stoppedDryBlend + fadeStep);
  else if (stoppedDryBlend > targetDry) stoppedDryBlend = std::max(targetDry, stoppedDryBlend - fadeStep);
- if (demoSilenceBlend < targetSilence) demoSilenceBlend = std::min(targetSilence, demoSilenceBlend + fadeStep);
- else if (demoSilenceBlend > targetSilence) demoSilenceBlend = std::max(targetSilence, demoSilenceBlend - fadeStep);
  for (int ch=0; ch<2; ++ch) {
   const float processed = c.outputs[ch][n];
   const float mixed = canPassThrough ? processed * (1.0f-stoppedDryBlend) + dryInput[ch][n] * stoppedDryBlend : processed;
   const float audition = c.numFrames <= static_cast<int>(auditionBuffer[ch].size()) ? auditionBuffer[ch][n] : 0.0f;
-  c.outputs[ch][n] = (mixed + audition) * (1.0f-demoSilenceBlend);
+  c.outputs[ch][n] = mixed + audition;
  }
 }
 }

@@ -38,7 +38,7 @@ grains_bounds_end = raw.index(']', grains_bounds) + 1
 raw = raw[:grains_bounds] + '"qlinkBoundsData": ["0 30 1280 130", "0 180 1280 130", "0 330 1280 130", "0 480 1280 130"]' + raw[grains_bounds_end:]
 
 # The same artwork is the background on every plugin page.
-for page_name in ('MAIN', 'MARKOV', 'GRAINS', 'MIX', 'LICENSE', 'INFO'):
+for page_name in ('MAIN', 'MARKOV', 'GRAINS', 'MIX', 'INFO'):
     anchor = '"tabName": "%s"' % page_name
     if raw.count(anchor) != 1: sys.exit('Page missing or ambiguous: %s' % page_name)
     start = raw.index(anchor)
@@ -92,18 +92,6 @@ yes_definition = {'key': 'ClearConfirmYes', 'value': {'version': 2,
   'handle remapping': {'version': 1, 'map': []},
   'bounds': {'version': 1, 'acceptsHWFocus': 'No', 'showWhenDataModelInvalid': 'Show',
    'whenVisible': 'Always', 'boundsType': 'Absolute', 'bounds': '0 0 175 60'}}]}}
-# Confirming removal uses the same native action mechanism as Clear Pool.
-remove_definition = {'key': 'RemoveLicenseYes', 'value': {'version': 2,
- 'actions': [
-  {'version': 1, 'onAction': 'Mouse Down', 'handler': 'Toggle Switch', 'handleName': 'ResetOnGestureEnd/Parameter 183', 'additionalData': ''},
-  {'version': 1, 'onAction': 'Mouse Down', 'handler': 'Toggle Switch', 'handleName': 'Local/2/removeLicenseConfirm', 'additionalData': ''}],
- 'backgroundData': {'version': 1, 'focussed': {'version': 1, 'colour': '0', 'image': ''}, 'unfocussed': {'version': 1, 'colour': '0', 'image': ''}},
- 'ignoreMousePresses': False, 'disableCoarseDataWheel': False,
- 'componentsData': [{'version':2, 'componentData':{'version':1,'name':'Confirm remove license','type':'Image',
-  'data':{'version':2,'imageType':'Regular','colour':'0','image':'license-confirm-remove.png'}},
-  'handle remapping':{'version':1,'map':[]},
-  'bounds':{'version':1,'acceptsHWFocus':'No','showWhenDataModelInvalid':'Show','whenVisible':'Always',
-   'boundsType':'Absolute','bounds':'0 0 175 60'}}]}}
 # Grid cells select their position and expose the shared probability value to
 # the hardware data wheel when the cell itself receives focus.
 markov_cell_definition = {'key':'MarkovCellFocus','value':{'version':2,
@@ -120,7 +108,7 @@ defs_marker = '"localComponentDefinitions": ['
 if raw.count(defs_marker) != 1: sys.exit('Local definitions missing or ambiguous.')
 
 defs_pos = raw.index(defs_marker)+len(defs_marker)
-raw = raw[:defs_pos] + '\n'+json.dumps(yes_definition)+','+json.dumps(remove_definition)+','+json.dumps(markov_cell_definition)+',' + raw[defs_pos:]
+raw = raw[:defs_pos] + '\n'+json.dumps(yes_definition)+','+json.dumps(markov_cell_definition)+',' + raw[defs_pos:]
 # Add the probability grid: bars are driven by saved matrix parameters,
 # transparent buttons select a cell, and a frame marks the current selection.
 markov_start = raw.index('"tabName": "MARKOV"')
@@ -484,117 +472,11 @@ entry = {'version':2,'componentData':{'version':1,'name':'Info text','type':'Ima
 section = section[:pos] + json.dumps(entry) + section[pos:]
 raw = raw[:info_start] + section + raw[info_end:]
 shutil.copy2(project/'assets'/'info-text.png', skins/'info-text.png')
-# License registration status, short code and native start button.
-license_start = raw.index('"tabName": "LICENSE"')
-license_end = raw.index('"qlinkBoundsData"', license_start)
-section = raw[license_start:license_end]
-pos = section.index('"componentsData": [') + len('"componentsData": [')
-entry = {'version':2,'componentData':{'version':1,'name':'License registration','type':'Image',
- 'data':{'version':2,'imageType':'Regular','colour':'0','image':'license-page.png'}},
- 'handle remapping':{'version':1,'map':[]},
- 'bounds':{'version':1,'acceptsHWFocus':'No','showWhenDataModelInvalid':'Show',
- 'whenVisible':'Always','boundsType':'Absolute','bounds':'0 0 1280 624'}}
-def license_when(item, condition):
-    item['bounds']['version'] = 2
-    if item['componentData']['type'] != 'Image':
-        item['bounds']['showWhenDataModelInvalid'] = 'Hide'
-    item['bounds']['additionalInvalidatingHandles'] = [condition]
-    return item
-
-def license_in_states(item, low, high):
-    assert low == high
-    return license_when(item, 'IndexedEnabling/%d/6/Parameter 163' % low)
-
-# The registration artwork and button are hidden once the license is valid.
-license_entries = [license_in_states(json.loads(json.dumps(entry)), i, i) for i in (0, 1, 2, 4, 5)]
-online_note=stereo_label('Registration requires internet', 'Text', 163, '640 465 570 44')
-online_note['componentData']['data']['text']='Your MPC must be online to register.'
-online_note['componentData']['data']['textStyle']['font']['height']=22.0
-license_entries.extend([license_in_states(json.loads(json.dumps(online_note)), i, i) for i in (0,1,2,4,5)])
-for name, parameter, bounds in [('License status',163,'640 120 500 50'), ('Pairing code',164,'640 360 300 90')]:
-    label = stereo_label(name, 'Value', parameter, bounds)
-    label['componentData']['data']['textStyle']['font']['height'] = 72.0 if parameter in (164, 165) else 36.0
-    if parameter in (164, 165):
-        license_entries.extend([license_in_states(json.loads(json.dumps(label)),i,i) for i in (2,5)])
-    else:
-        license_entries.extend([license_in_states(json.loads(json.dumps(label)),i,i) for i in (0,1,2,4,5)])
-placeholder = stereo_label('Pairing code placeholder', 'Text', 164, '640 360 380 90')
-placeholder['componentData']['data']['text'] = 'xxxxx'
-placeholder['componentData']['data']['textStyle']['font']['height'] = 72.0
-license_entries.extend([license_in_states(json.loads(json.dumps(placeholder)), i, i) for i in (0,4)])
-for asset, states in [('license-start', (0,4)), ('license-refresh', (5,))]:
-    button = stereo_entry('Get pairing code', 'Button', {'version':2,'onImage':asset+'-on.png','offImage':asset+'-off.png','buttonId':1,'numButtonsInGroup':1,'handleName':'Data','gestureBehaviour':'Instant'},166,'1010 545 210 48','Yes')
-    button['handle remapping']['map'][0]['value']='ResetOnGestureEnd/Parameter 166'
-    license_entries.extend([license_in_states(json.loads(json.dumps(button)),i,i) for i in states])
-expired_line = {'version':2,'componentData':{'version':1,'name':'Expired code strike','type':'Image',
- 'data':{'version':2,'imageType':'Regular','colour':'0','image':'license-expired-line.png'}},
- 'handle remapping':{'version':1,'map':[]},
- 'bounds':{'version':1,'acceptsHWFocus':'No','showWhenDataModelInvalid':'Show',
- 'whenVisible':'Always','boundsType':'Absolute','bounds':'640 397 240 4'}}
-license_entries.append(license_in_states(expired_line,5,5))
-certificate = json.loads(json.dumps(entry))
-certificate['componentData']['name']='License certificate'
-certificate['componentData']['data']['image']='license-certificate.png'
-license_entries.append(license_in_states(certificate,3,3))
-# Standard-size text accommodates exceptionally long email addresses; ordinary
-# addresses get the larger certificate typography.
-for is_long, count, font_size, line_height in [(0,4,34.0,34),(1,16,9.0,8)]:
- for i in range(count):
-    label=stereo_label('License email line %d size %d' % (i+1,is_long),'Value',167+i,'287 %d 705 %d' % (225+i*line_height,line_height))
-    label['componentData']['data']['textStyle']['font']['height']=font_size
-    label['componentData']['data']['textStyle']['justification']='horizontallyCentred verticallyCentred'
-    license_in_states(label,3,3)
-    label['bounds']['additionalInvalidatingHandles'].append('IndexedEnabling/%d/2/Parameter 184' % is_long)
-    license_entries.append(label)
-for name,asset,param,x in [('Remove license','remove',183,545)]:
-    b=stereo_entry(name,'Button',{'version':2,'onImage':'license-'+asset+'-on.png','offImage':'license-'+asset+'-off.png','buttonId':1,'numButtonsInGroup':1,'handleName':'Data','gestureBehaviour':'Instant'},param,'%d 370 190 44' % x,'Yes')
-    b['handle remapping']['map'][0]['value']='Local/2/removeLicenseConfirm'
-    license_in_states(b,3,3)
-    b['bounds']['additionalInvalidatingHandles'].append('IndexedEnabling/0/2/Local/2/removeLicenseConfirm')
-    license_entries.append(b)
-confirm_handles=['IndexedEnabling/1/2/Local/2/removeLicenseConfirm', 'IndexedEnabling/3/6/Parameter 163']
-def license_confirm_bounds(rect):
- return {'version':2,'acceptsHWFocus':'No','showWhenDataModelInvalid':'Show','whenVisible':'Always',
-         'boundsType':'Absolute','bounds':rect,'additionalInvalidatingHandles':confirm_handles}
-license_entries.extend([
- {'version':2,'componentData':{'version':1,'name':'Remove license confirmation','type':'Image',
-   'data':{'version':2,'imageType':'Regular','colour':'0','image':'license-confirm-panel.png'}},
-  'handle remapping':{'version':1,'map':[]},'bounds':license_confirm_bounds('390 195 500 230')},
- {'version':2,'componentData':{'version':1,'name':'Confirm remove license','type':'RemoveLicenseYes','data':{'version':1,'handleName':'Data'}},
-  'handle remapping':{'version':1,'map':[]},'bounds':license_confirm_bounds('445 327 175 60')},
- {'version':2,'componentData':{'version':1,'name':'Cancel license removal','type':'Button',
-   'data':{'version':2,'onImage':'clear-confirm-cancel-on.png','offImage':'clear-confirm-cancel.png','buttonId':1,'numButtonsInGroup':1,'handleName':'Data','gestureBehaviour':'Instant'}},
-  'handle remapping':{'version':1,'map':[{'key':'Data','value':'Local/2/removeLicenseConfirm'}]},'bounds':license_confirm_bounds('660 327 175 60')}
-])
-section = section[:pos] + ','.join(json.dumps(item) for item in license_entries) + section[pos:]
-raw = raw[:license_start] + section + raw[license_end:]
-for name in ('license-page.png', 'license-start-on.png', 'license-start-off.png', 'license-refresh-on.png', 'license-refresh-off.png', 'license-expired-line.png',
-             'license-certificate.png', 'license-reregister-on.png', 'license-reregister-off.png',
-             'license-remove-on.png', 'license-remove-off.png', 'license-confirm-panel.png', 'license-confirm-remove.png'):
- shutil.copy2(project/'assets'/name, skins/name)
-# Display the demo notice above the controls on every Scatterloom page.
-for page_name in ('MAIN', 'MARKOV', 'GRAINS', 'MIX', 'LICENSE', 'INFO'):
- start=raw.index('"tabName": "%s"' % page_name)
- end=raw.index('"qlinkBoundsData"', start)
- section=raw[start:end]
- marker='"componentsData": '
- begin=section.index(marker)+len(marker)
- components,length=json.JSONDecoder().raw_decode(section[begin:])
- components.append({'version':2,
-  'componentData':{'version':1,'name':'Demo unregistered overlay','type':'Image',
-   'data':{'version':2,'imageType':'Regular','colour':'0','image':'demo-unregistered.png'}},
-  'handle remapping':{'version':1,'map':[]},
-  'bounds':{'version':2,'acceptsHWFocus':'No','showWhenDataModelInvalid':'Show',
-   'whenVisible':'Always','boundsType':'Absolute','bounds':'0 0 1280 624',
-   'additionalInvalidatingHandles':['IndexedEnabling/1/2/Parameter 185']}})
- section=section[:begin]+json.dumps(components)+section[begin+length:]
- raw=raw[:start]+section+raw[end:]
-shutil.copy2(project/'assets'/'demo-unregistered.png', skins/'demo-unregistered.png')
 raw = raw.replace('"tabName": "GRAINS"', '"tabName": "SETTINGS"')
 raw = raw.replace('"tabName": "MARKOV"', '"tabName": "PATTERN"')
-from info_merge import combine_info, remove_license_qlinks
+from info_merge import combine_info, update_qlinks
 raw = combine_info(raw, skins, json.loads((project / "plugin.json").read_text())["version"])
-remove_license_qlinks(qlink_path)
+update_qlinks(qlink_path)
 path.write_text(raw)
 print('Added shared artwork and Main controls.')
 

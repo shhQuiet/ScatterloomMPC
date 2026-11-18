@@ -3,14 +3,12 @@
 Scatterloom is a granular rhythm effect for MPC standalone. It captures audio
 into a grain pool and weaves those grains into Euclidean patterns using a Markov
 probability matrix. This repository contains the MPC version; the desktop
-project and the pairing service are separate.
+project is separate.
 
 ## Install
 
 Download a release and follow the [MPC installation guide](https://elsewave.pages.dev/mpc/install).
-MPC OS 3.10.1 or later and external plugin support are required. A license key
-and an internet connection are needed once to pair each MPC. The plugin checks
-the resulting license offline afterwards.
+MPC OS 3.10.1 or later and external plugin support are required. No license key or internet connection is required.
 
 ## Build
 
@@ -40,6 +38,6 @@ an export until that workflow is reconciled.
 
 ## License
 
-The Elsewave source is available under the restricted terms in [LICENSE](LICENSE).
+Elsewave-authored source is available under the MIT license in [LICENSE](LICENSE).
 Third-party code and artwork have their own licenses; see
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
