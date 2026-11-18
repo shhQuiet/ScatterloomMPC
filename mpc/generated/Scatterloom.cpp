@@ -5634,10 +5634,12 @@ void gen_01_perform(
             __gen_01_onsetArmed_82_value = ((bool)(detectedOnset_242) ? 0 : ((__gen_01_rearmCounter_83_value >= settledSamples_244) * (__gen_01_cooldown_81_value <= 0) ? 1 : __gen_01_onsetArmed_82_value));
             __gen_01_cooldown_81_value = ((bool)(detectedOnset_242) ? this->sr * 0.12 : this->maximum(0, __gen_01_cooldown_81_value - 1));
             auto preRollSamples_245 = this->minimum(8190, this->sr * 0.02);
-            number captureL_246 = this->gen_01_preL_71_read(preRollSamples_245, 0);
-            number captureR_247 = this->gen_01_preR_72_read(preRollSamples_245, 0);
-            this->gen_01_preL_71_write(inputL_13);
-            this->gen_01_preR_72_write(inputR_14);
+            // Continue writing the pre-roll every sample, but defer its reads
+            // until a capture slot actually needs them. Read before writing to
+            // preserve the original delay-line reader/writer relationship.
+            number captureL_246 = 0;
+            number captureR_247 = 0;
+            bool mpcPreRollRead = false;
             number newSlot_248 = __gen_01_captureSlot_84_value;
             number removeRequest_249 = this->__wrapped_op_clamp(rnbo_floor(removeGrain_45 + 0.5), 0, 9);
             number removeEdge_250 = (removeRequest_249 > 0) * (__gen_01_previousRemoveRequest_182_value == 0);
@@ -5793,6 +5795,11 @@ void gen_01_perform(
                 peek_11 = result_277[0];
                 number captureIsActive_278 = peek_11 > 0.5;
                 if ((bool)(captureIsActive_278)) {
+                    if (!mpcPreRollRead) {
+                        captureL_246 = this->gen_01_preL_71_read(preRollSamples_245, 0);
+                        captureR_247 = this->gen_01_preR_72_read(preRollSamples_245, 0);
+                        mpcPreRollRead = true;
+                    }
                     auto result_279 = this->peek_default(this->gen_01_capturePositions_64, captureIndex, 0);
                     number activeCapturePosition = result_279[0];
 #ifdef SCATTERLOOM_MPC_CAPTURE_GUARD
@@ -5818,6 +5825,8 @@ void gen_01_perform(
                 }
             }
 
+            this->gen_01_preL_71_write(inputL_13);
+            this->gen_01_preR_72_write(inputR_14);
             number DivisionStepsPerBeat_286 = 0;
 
             {
@@ -6122,6 +6131,11 @@ void gen_01_perform(
             auto selectedCapture = this->peek_default(this->gen_01_captureActive_65, selectedSlot, 0);
             playHit_409 *= selectedCapture[0] <= 0.5;
 #endif
+#ifdef SCATTERLOOM_MPC_CAPTURE_GUARD
+            // MPC pad audition is implemented by PoolAudition in the wrapper.
+            number auditionValid_410 = 0;
+            number auditionSelectedSlot = 0;
+#else
             number auditionValid_410 = auditionEdge_252 * (auditionPositionInQueue_255 >= 0) * (auditionPositionInQueue_255 < __gen_01_poolCount_85_value) * (clearActive_235 == 0);
             number auditionSelectedSlot = 0;
 
@@ -6146,6 +6160,7 @@ void gen_01_perform(
             );
 
             auditionSelectedLevel = result_412[0];
+#endif
             number visualTrigger_413 = auditionValid_410 + playHit_409 > 0;
             number visualQueuePosition_414 = ((bool)(auditionValid_410) ? auditionRequest_251 : deferredCursor_355 + 1);
             number nextVisualCountdown_415 = ((bool)(visualTrigger_413) ? this->sr * 0.18 : this->maximum(0, __gen_01_visualCountdown_175_value - 1));
@@ -6197,6 +6212,9 @@ void gen_01_perform(
             );
 
             auto selectedAttackSamples_430 = this->minimum(desiredAttackSamples_422, selectedBodySamples_429);
+#ifdef SCATTERLOOM_MPC_CAPTURE_GUARD
+            number auditionL_460 = 0, auditionR_462 = 0;
+#else
             number peek_54 = 0;
             number peek_55 = 0;
             auto result_431 = this->peek_default(this->gen_01_trimStarts_67, auditionSelectedSlot, 0);
@@ -6272,6 +6290,7 @@ void gen_01_perform(
             __gen_01_auditionAttack_191_value = auditionReadAttack_441;
             __gen_01_auditionLevel_192_value = ((bool)(resetNow_233) ? 0 : auditionReadLevel_442);
             __gen_01_auditionStart_193_value = ((bool)(resetNow_233) ? 0 : auditionReadStart_443);
+#endif
             number nextRandom_463 = fract(__gen_01_randomState_162_value * 3.987654 + 0.1234567);
             number reverseChoice_464 = (reverseProb_211 >= 1 ? 1 : (reverseProb_211 <= 0 ? 0 : nextRandom_463 < reverseProb_211));
             number selectedVoiceStart_465 = ((bool)(reverseChoice_464) ? selectedTrimEnd_427 - (selectedBodySamples_429 + voiceReleaseSamples_423) : selectedTrimStart_425);
