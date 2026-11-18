@@ -8,6 +8,7 @@ class PoolAudition {
  struct Voice { int slot=-1, position=0, end=0, fade=1; };
  std::array<Voice,9> voices {};
 public:
+ bool active() const noexcept { for (const auto& v : voices) if (v.slot >= 0) return true; return false; }
  void reset() noexcept { for(auto &v:voices) v=Voice{}; }
  bool trigger(const ScatterloomStatusBridge& pool, int row, double sampleRate) noexcept {
   if (row<0 || row>=ScatterloomStatusBridge::slots) return false;

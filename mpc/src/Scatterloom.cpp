@@ -533,9 +533,14 @@ core.scheduleEvent(RNBO::TransportEvent(t,scatterloomPlaying ? RNBO::TransportSt
  if (c.numFrames<=static_cast<int>(auditionBuffer[0].size())) {
   const unsigned requests=pendingAudition.exchange(0,std::memory_order_acq_rel);
   for (int row=0;row<9;++row) if(requests & (1u<<row)) poolAudition.trigger(poolStatus,row,c.sampleRate);
-  for(int n=0;n<c.numFrames;++n) {
-   auto frame=poolAudition.next(poolStatus);
-   auditionBuffer[0][n]=frame[0]; auditionBuffer[1][n]=frame[1];
+  if (poolAudition.active()) {
+   for(int n=0;n<c.numFrames;++n) {
+    auto frame=poolAudition.next(poolStatus);
+    auditionBuffer[0][n]=frame[0]; auditionBuffer[1][n]=frame[1];
+   }
+  } else {
+   std::fill_n(auditionBuffer[0].begin(), c.numFrames, 0.0f);
+   std::fill_n(auditionBuffer[1].begin(), c.numFrames, 0.0f);
   }
  }
 }
@@ -603,23 +608,28 @@ if (std::abs(get(60) - arcFraction) >= 1.0f/1024.0f) {
 // or the duration relative to the cycle changes; never generate artwork in audio.
 if (displayDirty || lastSectorSteps != ringSteps || lastSectorPulses != ringPulses || lastSectorRotation != ringRotation ||
     std::abs(lastSectorFraction-fullArcFraction) >= 1.0f/1024.0f) {
+ bool activeSteps[32] = {}; int nextGaps[32] = {}; double starts[32] = {};
+ for (int i=0; i<ringSteps; ++i) {
+  activeSteps[i] = (((i+ringRotation)%ringSteps)*ringPulses)%ringSteps < ringPulses;
+  starts[i] = static_cast<double>(i)/ringSteps;
+ }
+ for (int i=0; i<ringSteps; ++i) if (activeSteps[i])
+  for (int gap=1; gap<ringSteps; ++gap) if (activeSteps[(i+gap)%ringSteps]) { nextGaps[i]=gap; break; }
+ const int wholeGrains = static_cast<int>(fullArcFraction);
+ const double partialGrain = fullArcFraction - std::floor(fullArcFraction);
  for (int segment=0; segment<64; ++segment) {
   const double t=(segment+0.5)/64.0; int grains=0, ribbon=0;
   for (int i=0; i<ringSteps; ++i) {
-   if ((((i+ringRotation)%ringSteps)*ringPulses)%ringSteps >= ringPulses) continue;
-   const double start=static_cast<double>(i)/ringSteps;
-   double delta=t-start; if (delta<0) delta+=1.0;
-   grains += static_cast<int>(fullArcFraction);
-   if (delta < (fullArcFraction - std::floor(fullArcFraction))) ++grains;
-   for (int gap=1; gap<ringSteps; ++gap) {
-    int next=(i+gap)%ringSteps;
-    if ((((next+ringRotation)%ringSteps)*ringPulses)%ringSteps < ringPulses) {
-     const double end=static_cast<double>(gap)/ringSteps;
-     if (gap>1 && delta>0.012 && delta<end-0.012) {
-      const int level=std::max(1,std::min(7,static_cast<int>((1.0-delta/end)*7.0)+1));
-      ribbon=std::max(ribbon,level);
-     }
-     break;
+   if (!activeSteps[i]) continue;
+   double delta=t-starts[i]; if (delta<0) delta+=1.0;
+   grains += wholeGrains;
+   if (delta < partialGrain) ++grains;
+   const int gap=nextGaps[i];
+   if (gap>1) {
+    const double end=static_cast<double>(gap)/ringSteps;
+    if (delta>0.012 && delta<end-0.012) {
+     const int level=std::max(1,std::min(7,static_cast<int>((1.0-delta/end)*7.0)+1));
+     ribbon=std::max(ribbon,level);
     }
    }
   }
